@@ -6,6 +6,17 @@ import HomeScreen from '@/features/home/HomeScreen';
 import ActivityScreen from '@/features/activity/ActivityScreen';
 import SettingsScreen from '@/features/settings/SettingsScreen';
 
+jest.mock('@/features/settings/settingsService', () => ({
+  settingsService: {
+    get: jest.fn().mockResolvedValue({ backgroundTrackingEnabled: false }),
+  },
+}));
+jest.mock('@/features/run/services/locationAdapter', () => ({
+  locationAdapter: {
+    getPermission: jest.fn().mockResolvedValue({ granted: false, canAskAgain: true }),
+  },
+}));
+
 it('햄버거 메뉴로 Drawer를 열고 Home, Activity, Settings 사이를 이동한다', async () => {
   const result = renderRouter(
     {
@@ -20,7 +31,7 @@ it('햄버거 메뉴로 Drawer를 열고 Home, Activity, Settings 사이를 이�
   await result;
   const user = userEvent.setup();
   expect(result.getPathname()).toBe('/');
-  expect(screen.getByRole('button', { name: 'START' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'START' })).toBeEnabled();
 
   await user.press(screen.getByRole('button', { name: '메뉴 열기' }));
   await user.press(await screen.findByText('Activity'));
@@ -30,10 +41,10 @@ it('햄버거 메뉴로 Drawer를 열고 Home, Activity, Settings 사이를 이�
   await user.press(screen.getByRole('button', { name: '메뉴 열기' }));
   await user.press(await screen.findByText('Settings'));
   await waitFor(() => expect(result.getPathname()).toBe('/settings'));
-  expect(screen.getByText('권한 상태를 아직 확인하지 않았어요.')).toBeOnTheScreen();
+  expect(await screen.findByText('포그라운드 위치: 허용되지 않음')).toBeOnTheScreen();
 
   await user.press(screen.getByRole('button', { name: '메뉴 열기' }));
   await user.press(await screen.findByText('Home'));
   await waitFor(() => expect(result.getPathname()).toBe('/'));
-  expect(screen.getByRole('button', { name: 'START' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'START' })).toBeEnabled();
 });

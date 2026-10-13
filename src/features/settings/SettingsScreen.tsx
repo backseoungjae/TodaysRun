@@ -7,6 +7,7 @@ import { Radius } from '@/shared/ui/tokens/radius';
 import { Spacing } from '@/shared/ui/tokens/spacing';
 import { useUiTheme } from '@/shared/ui/useUiTheme';
 import appConfig from '../../../app.json';
+import { useLocationSettings } from './useLocationSettings';
 
 function SettingSection({ title, children }: PropsWithChildren<{ title: string }>) {
   const { colors } = useUiTheme();
@@ -21,33 +22,55 @@ function SettingSection({ title, children }: PropsWithChildren<{ title: string }
 }
 
 export default function SettingsScreen() {
+  const { snapshot, error, saving, refresh, setBackground, openSettings } = useLocationSettings();
   return (
     <Screen>
       <AppText variant="title" accessibilityRole="header">
         설정
       </AppText>
       <SettingSection title="위치 권한">
-        <AppText tone="muted">권한 상태를 아직 확인하지 않았어요.</AppText>
-        <AppButton label="기기 설정 열기" variant="secondary" disabled />
+        {snapshot ? (
+          <>
+            <AppText>
+              포그라운드 위치: {snapshot.foreground.granted ? '허용' : '허용되지 않음'}
+            </AppText>
+            <AppText>
+              백그라운드 위치: {snapshot.background.granted ? '허용' : '허용되지 않음'}
+            </AppText>
+          </>
+        ) : (
+          <AppText tone="muted">권한 상태를 아직 확인하지 않았어요.</AppText>
+        )}
+        <AppButton label="기기 설정 열기" variant="secondary" onPress={() => void openSettings()} />
         <AppText variant="caption" tone="muted">
-          위치 권한 확인과 설정 이동 기능은 준비 중이에요.
+          권한은 기기 설정에서 변경해 주세요. 앱에 돌아오면 다시 확인해요.
         </AppText>
       </SettingSection>
       <SettingSection title="백그라운드 기록">
         <View style={styles.row}>
           <AppText style={styles.rowLabel}>백그라운드 기록 사용</AppText>
           <Switch
-            value={false}
-            disabled
-            accessibilityState={{ disabled: true, checked: false }}
+            value={snapshot?.backgroundTrackingEnabled ?? false}
+            disabled={!snapshot || saving}
+            onValueChange={(value) => void setBackground(value)}
+            accessibilityState={{
+              disabled: !snapshot || saving,
+              checked: snapshot?.backgroundTrackingEnabled ?? false,
+            }}
             accessibilityLabel="백그라운드 기록 사용"
-            accessibilityHint="기능 준비 중이며 현재 값을 저장하지 않습니다."
+            accessibilityHint="앱 내부 설정만 저장하며 실제 백그라운드 추적은 아직 실행되지 않습니다."
           />
         </View>
         <AppText variant="caption" tone="muted">
-          기능 준비 중이에요. 표시된 값은 저장된 설정이 아니에요.
+          앱 내부 사용 설정을 저장해요. 실제 백그라운드 위치 기록 기능은 아직 준비 중이에요.
         </AppText>
       </SettingSection>
+      {error && (
+        <>
+          <AppText accessibilityRole="alert">{error}</AppText>
+          <AppButton label="설정 다시 확인" variant="secondary" onPress={() => void refresh()} />
+        </>
+      )}
       <SettingSection title="데이터 초기화">
         <AppText tone="muted">러닝 기록과 경로를 삭제하는 기능이에요.</AppText>
         <AppButton label="전체 기록 삭제" variant="danger" disabled />

@@ -11,6 +11,7 @@
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "com.todaysrun.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -33,7 +34,17 @@
           "imageWidth": 76
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "현재 위치 준비와 러닝 경로 기록에 위치 권한을 사용합니다.",
+          "locationAlwaysAndWhenInUsePermission": "화면을 끄거나 앱을 전환해도 러닝 경로를 기록하기 위해 위치 권한을 사용합니다.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      "expo-dev-client"
     ],
     "experiments": {
       "typedRoutes": true,

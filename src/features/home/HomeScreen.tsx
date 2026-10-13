@@ -1,10 +1,15 @@
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useRunPreparation } from '@/features/run/hooks/useRunPreparation';
+import { CountdownOverlay } from '@/features/run/components/CountdownOverlay';
+import { preparationMessage } from '@/features/run/services/preparationMessages';
 import { AppButton } from '@/shared/ui/components/AppButton';
 import { AppText } from '@/shared/ui/components/AppText';
 import { Screen } from '@/shared/ui/components/Screen';
 import { Spacing } from '@/shared/ui/tokens/spacing';
 
 export default function HomeScreen() {
+  const { state, start, cancel } = useRunPreparation();
+  const busy = state.status === 'checkingPermission' || state.status === 'waitingForLocation';
   return (
     <Screen>
       <View style={styles.greeting}>
@@ -16,16 +21,40 @@ export default function HomeScreen() {
         </AppText>
       </View>
       <View style={styles.start}>
-        <AppButton
-          label="START"
-          shape="circle"
-          disabled
-          accessibilityHint="러닝 기능 준비 중으로 아직 시작할 수 없습니다."
-        />
+        {busy ? (
+          <>
+            <ActivityIndicator size="large" accessibilityLabel="위치 준비 중" />
+            <AppText>
+              {state.status === 'checkingPermission'
+                ? '시작 조건 확인 중…'
+                : '정확한 GPS 위치를 기다리고 있어요…'}
+            </AppText>
+            <AppButton label="준비 취소" variant="secondary" onPress={cancel} />
+          </>
+        ) : state.status === 'failed' ? (
+          <>
+            <AppText accessibilityRole="alert" style={styles.center}>
+              {preparationMessage(state.reason)}
+            </AppText>
+            <AppButton label="재시도" onPress={() => void start()} />
+            <AppButton label="취소" variant="secondary" onPress={cancel} />
+          </>
+        ) : (
+          <AppButton
+            label="START"
+            shape="circle"
+            onPress={() => void start()}
+            disabled={state.status === 'countdown'}
+            accessibilityHint="위치 권한과 GPS 준비를 확인합니다. 아직 운동은 저장되지 않습니다."
+          />
+        )}
         <AppText tone="muted" style={styles.center}>
-          러닝 기능을 준비하고 있어요.{'\n'}지금은 운동을 시작할 수 없어요.
+          위치 준비와 카운트다운을 확인할 수 있어요.{'\n'}아직 운동을 시작하거나 저장하지 않아요.
         </AppText>
       </View>
+      {state.status === 'countdown' && (
+        <CountdownOverlay seconds={state.seconds} onCancel={cancel} />
+      )}
     </Screen>
   );
 }
