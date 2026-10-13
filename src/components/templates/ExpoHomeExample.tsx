@@ -28,7 +28,7 @@ function getDevMenuHint() {
   );
 }
 
-export default function HomeScreen() {
+export default function ExpoHomeExample() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
