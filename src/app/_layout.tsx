@@ -25,6 +25,8 @@ export default function RootLayout() {
       >
         <StatusBar style={isDark ? 'light' : 'dark'} />
         <Stack>
+          <Stack.Screen name="running" options={{ headerShown: false, gestureEnabled: false }} />
+          <Stack.Screen name="run-result/[runId]" options={{ title: '러닝 결과' }} />
           <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
         </Stack>
       </ThemeProvider>

@@ -6,6 +6,7 @@ export type PreparationState =
   | { status: 'idle' }
   | { status: 'checkingPermission' }
   | { status: 'waitingForLocation' }
+  | { status: 'starting' }
   | { status: 'countdown'; seconds: number }
   | { status: 'failed'; reason: string };
 
@@ -21,7 +22,7 @@ export interface PreparationDependencies {
   location: LocationAdapter;
   backgroundEnabled(): Promise<boolean>;
   confirm(kind: PermissionKind, needsSettings: boolean, signal: AbortSignal): Promise<boolean>;
-  onPrepared(fix: GpsFix): void;
+  onPrepared(fix: GpsFix, signal: AbortSignal): void | Promise<void>;
   now(): number;
   isAppActive?(): boolean;
 }

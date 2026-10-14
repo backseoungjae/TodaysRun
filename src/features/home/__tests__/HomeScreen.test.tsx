@@ -17,7 +17,7 @@ it('START를 표시하고 위치 준비만 요청하며 아직 러닝이 저장�
   expect(start).toBeEnabled();
   await userEvent.setup().press(start);
   expect(mockPreparation().start).toHaveBeenCalledTimes(1);
-  expect(screen.getByText(/아직 운동을 시작하거나 저장하지 않아요/)).toBeOnTheScreen();
+  expect(screen.getByText(/러닝 기록을 시작해요/)).toBeOnTheScreen();
 });
 
 it('위치 준비 중 START 대신 로딩과 취소를 표시한다', async () => {

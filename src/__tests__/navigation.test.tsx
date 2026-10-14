@@ -21,6 +21,8 @@ it('햄버거 메뉴로 Drawer를 열고 Home, Activity, Settings 사이를 이�
   const result = renderRouter(
     {
       _layout: RootLayout,
+      running: () => null,
+      'run-result/[runId]': () => null,
       '(drawer)/_layout': DrawerLayout,
       '(drawer)/index': HomeScreen,
       '(drawer)/activity': ActivityScreen,

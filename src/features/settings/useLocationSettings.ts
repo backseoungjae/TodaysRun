@@ -4,6 +4,7 @@ import { useFocusEffect } from 'expo-router';
 import { locationAdapter } from '@/features/run/services/locationAdapter';
 import type { LocationPermission } from '@/features/run/services/preparationTypes';
 import { settingsService } from './settingsService';
+import { runStore } from '@/features/run/store/runStore';
 
 type SettingsSnapshot = {
   foreground: LocationPermission;
@@ -55,6 +56,7 @@ export function useLocationSettings() {
   );
 
   const setBackground = async (enabled: boolean) => {
+    if (runStore.getState().status === 'RUNNING' || runStore.getState().status === 'PAUSED') return;
     if (writing.current) return;
     writing.current = true;
     setSaving(true);

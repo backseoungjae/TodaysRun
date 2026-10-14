@@ -156,9 +156,9 @@ export function createRunPreparation(
         }
         cleanup();
         if (active === controller && !signal.aborted) {
-          // Phase 5에서 저장·화면 이동을 연결할 경계. 현재는 Repository 쓰기가 없다.
-          deps.onPrepared(latestFix);
-          update({ status: 'idle' });
+          update({ status: 'starting' });
+          await deps.onPrepared(latestFix, signal);
+          if (active === controller && !signal.aborted) update({ status: 'idle' });
         }
       } catch (error) {
         if (active === controller && !signal.aborted)

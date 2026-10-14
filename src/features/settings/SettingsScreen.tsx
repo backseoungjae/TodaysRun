@@ -8,6 +8,8 @@ import { Spacing } from '@/shared/ui/tokens/spacing';
 import { useUiTheme } from '@/shared/ui/useUiTheme';
 import appConfig from '../../../app.json';
 import { useLocationSettings } from './useLocationSettings';
+import { useStore } from 'zustand';
+import { runStore } from '@/features/run/store/runStore';
 
 function SettingSection({ title, children }: PropsWithChildren<{ title: string }>) {
   const { colors } = useUiTheme();
@@ -23,6 +25,10 @@ function SettingSection({ title, children }: PropsWithChildren<{ title: string }
 
 export default function SettingsScreen() {
   const { snapshot, error, saving, refresh, setBackground, openSettings } = useLocationSettings();
+  const running = useStore(
+    runStore,
+    (state) => state.status === 'RUNNING' || state.status === 'PAUSED',
+  );
   return (
     <Screen>
       <AppText variant="title" accessibilityRole="header">
@@ -51,10 +57,10 @@ export default function SettingsScreen() {
           <AppText style={styles.rowLabel}>백그라운드 기록 사용</AppText>
           <Switch
             value={snapshot?.backgroundTrackingEnabled ?? false}
-            disabled={!snapshot || saving}
+            disabled={!snapshot || saving || running}
             onValueChange={(value) => void setBackground(value)}
             accessibilityState={{
-              disabled: !snapshot || saving,
+              disabled: !snapshot || saving || running,
               checked: snapshot?.backgroundTrackingEnabled ?? false,
             }}
             accessibilityLabel="백그라운드 기록 사용"

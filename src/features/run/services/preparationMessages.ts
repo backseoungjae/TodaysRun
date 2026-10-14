@@ -23,6 +23,7 @@ export function preparationMessage(reason: string): string {
     case 'app-inactive':
       return '앱을 떠나 위치 준비를 중단했어요. 다시 시도해 주세요.';
     default:
+      if (/[가-힣]/.test(reason)) return reason;
       return '위치 준비에 실패했어요. 권한과 위치 서비스를 확인한 뒤 다시 시도해 주세요.';
   }
 }
