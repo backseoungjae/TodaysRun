@@ -190,6 +190,20 @@ export function createRunService(deps: Dependencies, policy: GpsPolicy) {
     }
   }
   return {
+    hasActiveRun: () =>
+      controlBusy || session?.status === 'RUNNING' || session?.status === 'PAUSED',
+    async manageRecords<T>(operation: () => Promise<T>): Promise<T> {
+      if (controlBusy || session?.status === 'RUNNING' || session?.status === 'PAUSED')
+        throw new Error('러닝이 진행 중일 때는 기록을 삭제할 수 없어요.');
+      controlBusy = true;
+      deps.store.setState({ busy: true });
+      try {
+        return await queue(operation);
+      } finally {
+        controlBusy = false;
+        deps.store.setState({ busy: false });
+      }
+    },
     async start(prepared: GpsFix, signal: AbortSignal) {
       if (controlBusy) return;
       controlBusy = true;

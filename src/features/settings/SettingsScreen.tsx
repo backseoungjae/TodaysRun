@@ -7,6 +7,7 @@ import { Radius } from '@/shared/ui/tokens/radius';
 import { Spacing } from '@/shared/ui/tokens/spacing';
 import { useUiTheme } from '@/shared/ui/useUiTheme';
 import appConfig from '../../../app.json';
+import { useRecordDeletion } from './useRecordDeletion';
 import { useLocationSettings } from './useLocationSettings';
 import { useStore } from 'zustand';
 import { runStore } from '@/features/run/store/runStore';
@@ -24,6 +25,7 @@ function SettingSection({ title, children }: PropsWithChildren<{ title: string }
 }
 
 export default function SettingsScreen() {
+  const deletion = useRecordDeletion();
   const { snapshot, error, saving, refresh, setBackground, openSettings } = useLocationSettings();
   const running = useStore(
     runStore,
@@ -79,16 +81,30 @@ export default function SettingsScreen() {
       )}
       <SettingSection title="데이터 초기화">
         <AppText tone="muted">러닝 기록과 경로를 삭제하는 기능이에요.</AppText>
-        <AppButton label="전체 기록 삭제" variant="danger" disabled />
+        <AppButton
+          label={deletion.deleting ? '삭제 중…' : '전체 기록 삭제'}
+          variant="danger"
+          disabled={deletion.disabled}
+          onPress={deletion.removeAll}
+        />
+        {deletion.checking && <AppText tone="muted">러닝 상태를 확인하고 있어요…</AppText>}
+        {deletion.blocked && <AppText tone="muted">{deletion.blocked}</AppText>}
+        {deletion.message && <AppText accessibilityRole="alert">{deletion.message}</AppText>}
+        {deletion.error && (
+          <>
+            <AppText accessibilityRole="alert">{deletion.error}</AppText>
+            <AppButton label="삭제 조건 다시 확인" onPress={() => void deletion.refresh()} />
+          </>
+        )}
         <AppText variant="caption" tone="muted">
-          기록 저장과 삭제 기능은 준비 중이에요.
+          앱 설정과 데이터베이스 구조는 유지돼요.
         </AppText>
       </SettingSection>
       <SettingSection title="앱 소개">
         <AppText>TodaysRun · {appConfig.expo.version}</AppText>
         <AppText tone="muted">달리기에 집중하고, 기록은 정확하게.</AppText>
         <AppText variant="caption" tone="muted">
-          로그인 없이 기기 안에 기록하는 러닝 앱을 만들고 있어요.
+          로그인 없이 러닝 기록과 경로를 기기 안에 저장해요.
         </AppText>
       </SettingSection>
     </Screen>

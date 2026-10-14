@@ -6,7 +6,7 @@ import RunningScreen from '../RunningScreen';
 import RunResultScreen from '../RunResultScreen';
 import { runStore } from '../../store/runStore';
 import { getRunService } from '../../services/runRuntime';
-import { getCompletedRun } from '../../services/runResultService';
+import { getCompletedRun, getRunPath } from '../../services/runResultService';
 import type { RunRecord } from '@/database/databaseTypes';
 
 jest.mock('@gorhom/bottom-sheet', () => ({
@@ -33,6 +33,7 @@ const pause = jest.fn();
 const resume = jest.fn();
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.mocked(getRunPath).mockResolvedValue([]);
   runStore.setState({
     id: 'run-1',
     status: 'PAUSED',
@@ -45,6 +46,8 @@ beforeEach(() => {
     error: null,
   });
   jest.mocked(getRunService).mockResolvedValue({
+    hasActiveRun: () => false,
+    manageRecords: async <T,>(operation: () => Promise<T>) => operation(),
     start: jest.fn(),
     pause,
     resume,

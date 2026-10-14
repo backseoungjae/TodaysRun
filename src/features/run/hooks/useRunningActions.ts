@@ -34,7 +34,7 @@ export function useRunningActions() {
   };
   const showResult = (runId: string) => {
     try {
-      router.replace({ pathname: '/run-result/[runId]', params: { runId } });
+      router.replace({ pathname: '/run-result/[runId]', params: { runId, source: 'finish' } });
     } catch {
       runStore.setState({ error: '결과 화면을 열지 못했어요. 저장된 결과를 다시 열어 주세요.' });
     }

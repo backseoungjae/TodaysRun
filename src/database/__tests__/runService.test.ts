@@ -272,3 +272,31 @@ it('앱 전환은 구독만 중단하고 복귀 후 경로를 분리하며 화�
   expect(f.store.getState().status).toBe('RUNNING');
   expect(f.store.getState().path.map((p) => p.segmentId)).toEqual([0, 1]);
 });
+
+it('진행 중 Service 세션은 Store를 비워도 기록 삭제를 차단한다', async () => {
+  const f = await fixture();
+  await f.start();
+  f.store.setState({ status: null, id: null });
+  const remove = jest.fn(async () => {});
+  expect(f.service.hasActiveRun()).toBe(true);
+  await expect(f.service.manageRecords(remove)).rejects.toThrow();
+  expect(remove).not.toHaveBeenCalled();
+});
+it('기록 관리 중에는 새 러닝 시작과 중복 관리를 차단한다', async () => {
+  const f = await fixture();
+  let resolve!: () => void;
+  const pending = f.service.manageRecords(
+    () =>
+      new Promise<void>((done) => {
+        resolve = done;
+      }),
+  );
+  await flush();
+  await f.start();
+  expect(await f.runs.findUnfinished()).toEqual([]);
+  await expect(f.service.manageRecords(async () => {})).rejects.toThrow();
+  resolve();
+  await pending;
+  await f.start();
+  expect(await f.runs.findUnfinished()).toHaveLength(1);
+});

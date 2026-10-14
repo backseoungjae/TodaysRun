@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/shared/ui/components/AppText';
-import { formatDuration, formatPace } from '../services/runDisplay';
+import { formatDuration, formatPace, formatDistance } from '../services/runDisplay';
 import { Spacing } from '@/shared/ui/tokens/spacing';
 
 export function RunMetrics({
@@ -21,7 +21,7 @@ export function RunMetrics({
           시간 {formatDuration(durationMs)}
         </AppText>
         <AppText variant="button" numberOfLines={1} style={styles.metric}>
-          거리 {(distanceMeters / 1_000).toFixed(2)}km
+          거리 {formatDistance(distanceMeters)}km
         </AppText>
         <AppText variant="button" numberOfLines={1} style={styles.metric}>
           페이스 {formatPace(pace)}/km
@@ -36,7 +36,7 @@ export function RunMetrics({
       </View>
       <View style={styles.metric}>
         <AppText tone="muted">거리 · km</AppText>
-        <AppText variant="heading">{(distanceMeters / 1_000).toFixed(2)}</AppText>
+        <AppText variant="heading">{formatDistance(distanceMeters)}</AppText>
       </View>
       <View style={styles.metric}>
         <AppText tone="muted">페이스 · /km</AppText>

@@ -20,11 +20,13 @@ export const RunMap = memo(function RunMap({
   path,
   sheetFraction = 0.7,
   containerHeight,
+  fitPath = false,
 }: {
   current: Coordinate | null;
   path: readonly PathPoint[];
   sheetFraction?: number;
   containerHeight?: number;
+  fitPath?: boolean;
 }) {
   // 최초 위치에서만 초기 중심을 정한다. 이후 region을 제어하지 않아 사용자 이동을 유지한다.
   const initial = useRef(current);
@@ -53,11 +55,18 @@ export const RunMap = memo(function RunMap({
       accessibilityLabel="러닝 지도"
       onMapReady={() => {
         setReady(true);
-        if (initial.current)
+        if (fitPath && path.length >= 2)
+          map.current?.fitToCoordinates([...path], {
+            edgePadding: { top: 24, bottom: 24, left: 24, right: 24 },
+            animated: false,
+          });
+        else if (initial.current)
           map.current?.animateCamera({ center: initial.current, zoom: 16 }, { duration: 0 });
       }}
     >
-      {current && <Marker coordinate={current} title="현재 유효 위치" />}
+      {current && (
+        <Marker coordinate={current} title={fitPath ? '저장된 마지막 위치' : '현재 유효 위치'} />
+      )}
       {pathSegments(path).map((coordinates, index) => (
         <Polyline key={index} coordinates={coordinates} strokeWidth={5} strokeColor={colors.text} />
       ))}

@@ -171,13 +171,22 @@ export function createRunRepository(db: DatabaseClient) {
         ).map(parseRun),
       );
     },
-    async deleteById(id: string): Promise<void> {
+    async deleteById(id: string, completedOnly = false): Promise<void> {
       await db.write(async (txn) => {
+        if (completedOnly && (await requireRun(txn, id)).status !== 'completed')
+          throw new Error('완료된 기록만 삭제할 수 있어요.');
         await txn.runAsync('DELETE FROM runs WHERE id=?', id);
       });
     },
-    async deleteAll(): Promise<void> {
+    async deleteAll(requireNoUnfinished = false): Promise<void> {
       await db.write(async (txn) => {
+        if (
+          requireNoUnfinished &&
+          (await txn.getFirstAsync(
+            "SELECT id FROM runs WHERE status IN ('running','paused') LIMIT 1",
+          ))
+        )
+          throw new Error('미완료 기록을 복구한 후 삭제해 주세요.');
         await txn.runAsync('DELETE FROM runs');
       });
     },

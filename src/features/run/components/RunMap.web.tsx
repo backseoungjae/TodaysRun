@@ -9,6 +9,7 @@ export function RunMap(_props: {
   path: readonly PathPoint[];
   sheetFraction?: number;
   containerHeight?: number;
+  fitPath?: boolean;
 }) {
   return (
     <View style={styles.container}>

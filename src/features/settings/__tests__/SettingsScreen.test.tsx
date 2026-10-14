@@ -4,6 +4,10 @@ import SettingsScreen from '../SettingsScreen';
 import { settingsService } from '../settingsService';
 import { locationAdapter } from '@/features/run/services/locationAdapter';
 
+jest.mock('@/features/run/services/runHistoryService', () => ({
+  runHistoryService: { deletionBlock: jest.fn().mockResolvedValue(null), removeAll: jest.fn() },
+}));
+
 jest.mock('../settingsService', () => ({
   settingsService: {
     get: jest.fn(),
@@ -32,11 +36,11 @@ beforeEach(() => {
   jest.mocked(locationAdapter.openSettings).mockResolvedValue(undefined);
 });
 
-it('실제 조회 결과를 표시하고 미구현 전체 삭제는 조작할 수 없게 한다', async () => {
+it('실제 권한과 삭제 가능 상태를 조회해서 표시한다', async () => {
   await renderRouter({ index: SettingsScreen });
   expect(await screen.findByText('포그라운드 위치: 허용되지 않음')).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: '기기 설정 열기' })).toBeEnabled();
-  expect(screen.getByRole('button', { name: '전체 기록 삭제' })).toBeDisabled();
+  await waitFor(() => expect(screen.getByRole('button', { name: '전체 기록 삭제' })).toBeEnabled());
   expect(screen.getByRole('switch', { name: '백그라운드 기록 사용' })).toBeEnabled();
   expect(screen.getByText(/실제 백그라운드 위치 기록 기능은 아직 준비 중/)).toBeOnTheScreen();
 });

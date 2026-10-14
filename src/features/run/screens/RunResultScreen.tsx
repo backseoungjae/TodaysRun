@@ -1,20 +1,26 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BackHandler } from 'react-native';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, BackHandler, StyleSheet, View } from 'react-native';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import type { RunRecord } from '@/database/databaseTypes';
 import { Screen } from '@/shared/ui/components/Screen';
 import { AppText } from '@/shared/ui/components/AppText';
 import { AppButton } from '@/shared/ui/components/AppButton';
 import { RunMetrics } from '../components/RunMetrics';
+import { RunMap, type PathPoint } from '../components/RunMap';
 import { calculateAveragePaceSecondsPerKm } from '../domain/runMetrics';
-import { getCompletedRun } from '../services/runResultService';
+import { getCompletedRun, getRunPath } from '../services/runResultService';
+import { formatRunDate } from '../services/runDisplay';
 
 export default function RunResultScreen() {
-  const { runId } = useLocalSearchParams<{ runId: string }>();
+  const { runId, source } = useLocalSearchParams<{ runId: string; source?: string }>();
   const id = typeof runId === 'string' ? runId : '';
+  const fromActivity = source === 'activity';
+  const destination = fromActivity ? '/activity' : '/';
+  const back = useCallback(() => router.dismissTo(destination), [destination]);
   const [result, setResult] = useState<{
     id: string;
     record: RunRecord | null;
+    path: PathPoint[];
     error: string | null;
   } | null>(null);
   const record = result?.id === id ? result.record : null;
@@ -23,20 +29,23 @@ export default function RunResultScreen() {
   useEffect(() => {
     let live = true;
     void Promise.resolve()
-      .then(() => {
+      .then(async () => {
         if (!id) throw new Error('invalid-id');
-        return getCompletedRun(id);
+        const value = await getCompletedRun(id);
+        const path = await getRunPath(id);
+        return { value, path };
       })
       .then(
-        (value) => {
-          if (live) setResult({ id, record: value, error: null });
+        ({ value, path }) => {
+          if (live) setResult({ id, record: value, path, error: null });
         },
         () => {
           if (live)
             setResult({
               id,
               record: null,
-              error: '완료된 기록을 읽지 못했어요. 다시 시도해 주세요.',
+              path: [],
+              error: '완료된 기록을 읽지 못했어요. 기록이 없거나 조회에 실패했어요.',
             });
         },
       );
@@ -47,27 +56,49 @@ export default function RunResultScreen() {
   useFocusEffect(
     useCallback(() => {
       const listener = BackHandler.addEventListener('hardwareBackPress', () => {
-        router.dismissTo('/');
+        back();
         return true;
       });
       return () => listener.remove();
-    }, []),
+    }, [back]),
   );
   return (
     <Screen>
+      <Stack.Screen
+        options={{
+          title: '러닝 결과',
+          gestureEnabled: false,
+          headerLeft: () => <AppButton label="뒤로" variant="secondary" onPress={back} />,
+        }}
+      />
       <AppText variant="title">러닝 결과</AppText>
       {record ? (
         <>
-          <AppText>저장 완료</AppText>
-          <AppText>{new Date(record.startedAtMs).toLocaleString('ko-KR')}</AppText>
+          {!fromActivity && <AppText>저장 완료</AppText>}
+          <AppText>{formatRunDate(record.startedAtMs)}</AppText>
           <RunMetrics
             durationMs={record.activeDurationMs}
             distanceMeters={record.distanceMeters}
             pace={calculateAveragePaceSecondsPerKm(record.activeDurationMs, record.distanceMeters)}
           />
+          <View style={styles.map}>
+            <RunMap
+              key={id}
+              current={result?.path.at(-1) ?? null}
+              path={result?.path ?? []}
+              sheetFraction={0}
+              fitPath
+            />
+          </View>
+          {!result?.path.length && <AppText tone="muted">저장된 GPS 경로가 없어요.</AppText>}
         </>
+      ) : error ? (
+        <AppText accessibilityRole="alert">{error}</AppText>
       ) : (
-        <AppText>{error ?? '저장된 기록을 불러오고 있어요…'}</AppText>
+        <>
+          <ActivityIndicator accessibilityLabel="기록 상세 불러오는 중" />
+          <AppText>저장된 기록을 불러오고 있어요…</AppText>
+        </>
       )}
       {error && (
         <AppButton
@@ -78,7 +109,14 @@ export default function RunResultScreen() {
           }}
         />
       )}
-      <AppButton label="Home으로" variant="secondary" onPress={() => router.dismissTo('/')} />
+      <AppButton
+        label={fromActivity ? 'Activity로' : 'Home으로'}
+        variant="secondary"
+        onPress={back}
+      />
     </Screen>
   );
 }
+const styles = StyleSheet.create({
+  map: { height: 320, position: 'relative', overflow: 'hidden' },
+});
