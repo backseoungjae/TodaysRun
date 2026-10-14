@@ -81,7 +81,7 @@ export function confirmLocationPermission(
     const message =
       kind === 'foreground'
         ? '현재 위치를 준비하려면 위치 권한이 필요해요.'
-        : '화면을 끄거나 다른 앱을 볼 때도 러닝을 기록하려면 백그라운드 위치 권한이 필요해요. Android 11 이상에서는 설정의 위치 권한에서 “항상 허용”을 선택한 뒤 돌아와 주세요. 실제 백그라운드 기록 기능은 아직 준비 중이에요.';
+        : '화면을 끄거나 다른 앱을 볼 때도 러닝을 기록하려면 백그라운드 위치 권한이 필요해요. Android 11 이상에서는 설정의 위치 권한에서 “항상 허용”을 선택한 뒤 돌아와 주세요.';
     Alert.alert(
       '위치 권한 안내',
       needsSettings ? `${message}\n기기 설정에서 권한을 변경해 주세요.` : message,

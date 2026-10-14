@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from 'react';
-import { StyleSheet, Switch, View } from 'react-native';
+import { StyleSheet, Switch, View, Platform } from 'react-native';
 import { AppButton } from '@/shared/ui/components/AppButton';
 import { AppText } from '@/shared/ui/components/AppText';
 import { Screen } from '@/shared/ui/components/Screen';
@@ -66,11 +66,13 @@ export default function SettingsScreen() {
               checked: snapshot?.backgroundTrackingEnabled ?? false,
             }}
             accessibilityLabel="백그라운드 기록 사용"
-            accessibilityHint="앱 내부 설정만 저장하며 실제 백그라운드 추적은 아직 실행되지 않습니다."
+            accessibilityHint="앱 내부 사용 설정이며 OS 위치 권한은 기기 설정에서 별도로 변경합니다."
           />
         </View>
         <AppText variant="caption" tone="muted">
-          앱 내부 사용 설정을 저장해요. 실제 백그라운드 위치 기록 기능은 아직 준비 중이에요.
+          {Platform.OS === 'android'
+            ? '앱 내부 사용 설정을 저장해요. 러닝 중에는 위치 알림과 함께 백그라운드 기록을 사용해요.'
+            : '앱 내부 사용 설정을 저장해요. 실제 백그라운드 위치 기록 기능은 아직 준비 중이에요.'}
         </AppText>
       </SettingSection>
       {error && (

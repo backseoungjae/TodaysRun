@@ -5,6 +5,7 @@ import { calculateAveragePaceSecondsPerKm } from '../domain/runMetrics';
 import { createRunSession, getElapsedMs, transitionRunSession } from '../domain/runSession';
 import type { GpsFix, GpsPolicy, RunSession } from '../domain/runTypes';
 import type { createRunStore } from '../store/runStore';
+import type { RunLocationRecord } from '@/database/databaseTypes';
 import type { LocationAdapter } from './preparationTypes';
 import { isReadyLocation } from './locationReadiness';
 
@@ -17,6 +18,16 @@ type Dependencies = {
   now(): number;
   makeId(): string;
   navigateRunning(): Promise<void>;
+  background?: {
+    start(id: string): Promise<void>;
+    stop(): Promise<void>;
+    clear(): void;
+    committed?(): void;
+    reload(
+      id: string,
+    ): Promise<{ session: RunSession; path: RunLocationRecord[]; error: string | null }>;
+    checkpoint(id: string): Promise<void>;
+  };
 };
 
 export function createRunService(deps: Dependencies, policy: GpsPolicy) {
@@ -44,7 +55,41 @@ export function createRunService(deps: Dependencies, policy: GpsPolicy) {
     subscription?.remove();
     subscription = null;
   };
-  function publish() {
+  let refreshing = false;
+  async function refreshSession() {
+    if (!deps.background || !id) return;
+    const saved = await deps.background.reload(id);
+    session = saved.session;
+    const last = saved.path.at(-1);
+    deps.store.setState((state) => ({
+      path:
+        state.path.length === saved.path.length &&
+        state.path.at(-1)?.timestampMs === last?.recordedAtMs
+          ? state.path
+          : saved.path.map((point) => ({
+              latitude: point.latitude,
+              longitude: point.longitude,
+              timestampMs: point.recordedAtMs,
+              segmentId: point.segmentIndex,
+            })),
+      current: last
+        ? state.current?.timestampMs === last.recordedAtMs
+          ? state.current
+          : {
+              latitude: last.latitude,
+              longitude: last.longitude,
+              accuracyMeters: last.accuracyMeters,
+              timestampMs: last.recordedAtMs,
+            }
+        : state.current,
+    }));
+    const previousError = deps.store.getState().error;
+    publish(false);
+    if (!saved.error && previousError === '위치 저장에 실패했어요. 다음 위치에서 재시도해요.')
+      deps.store.setState({ error: null });
+    if (saved.error) showError(saved.error);
+  }
+  function publish(clearError = true) {
     if (!session || !id) return;
     const durationMs = getElapsedMs(session, deps.now()) ?? session.elapsedMs;
     deps.store.setState({
@@ -58,7 +103,7 @@ export function createRunService(deps: Dependencies, policy: GpsPolicy) {
       durationMs,
       distanceMeters: session.gps.distanceMeters,
       pace: calculateAveragePaceSecondsPerKm(durationMs, session.gps.distanceMeters),
-      error: null,
+      ...(clearError ? { error: null } : {}),
     });
   }
   const clearTimers = () => {
@@ -83,6 +128,10 @@ export function createRunService(deps: Dependencies, policy: GpsPolicy) {
   }
   async function watch() {
     if (!foreground || session?.status !== 'RUNNING') return;
+    if (deps.background && id) {
+      await deps.background.start(id);
+      return;
+    }
     const token = ++generation;
     const handle = await deps.location.watch(
       (fix) => {
@@ -103,6 +152,15 @@ export function createRunService(deps: Dependencies, policy: GpsPolicy) {
   function startTimers() {
     clearTimers();
     displayTimer = setInterval(() => {
+      if (deps.background && foreground && !refreshing && !controlBusy) {
+        refreshing = true;
+        void queue(refreshSession)
+          .catch(() => showError('저장된 러닝 상태를 읽지 못했어요.'))
+          .finally(() => {
+            refreshing = false;
+          });
+        return;
+      }
       if (session?.status !== 'RUNNING') return;
       const durationMs = getElapsedMs(session, deps.now());
       if (durationMs !== null)
@@ -121,7 +179,8 @@ export function createRunService(deps: Dependencies, policy: GpsPolicy) {
     try {
       await queue(async () => {
         if (!id || session?.status !== 'RUNNING') return;
-        await deps.runs.saveCheckpoint(id, session, deps.now());
+        if (deps.background) await deps.background.checkpoint(id);
+        else await deps.runs.saveCheckpoint(id, session, deps.now());
       });
     } catch (error) {
       showError('운동 시간 저장에 실패했어요. 다음 체크포인트에서 다시 시도해요.');
@@ -144,6 +203,10 @@ export function createRunService(deps: Dependencies, policy: GpsPolicy) {
     try {
       return await queue(async () => {
         if (!id || !session) throw new Error('no-active-run');
+        if (deps.background) {
+          await deps.background.stop();
+          await refreshSession();
+        }
         if (type === 'RESUME' && (!(await deps.canStart()) || !foreground))
           throw new Error('시작 조건을 다시 확인해 주세요.');
         const atMs = deps.now();
@@ -174,12 +237,15 @@ export function createRunService(deps: Dependencies, policy: GpsPolicy) {
             throw error;
           }
         }
-        if (type === 'FINISH') clearTimers();
+        if (type === 'FINISH') {
+          clearTimers();
+          deps.background?.clear();
+        }
         return id;
       });
     } catch (error) {
       showError('상태를 저장하거나 위치를 준비하지 못했어요. 다시 시도해 주세요.');
-      if (session?.status === 'RUNNING' && foreground && subscription === null)
+      if (!deps.background && session?.status === 'RUNNING' && foreground && subscription === null)
         await watch().catch(() =>
           showError('위치 수신이 중단됐어요. 일시정지를 다시 시도해 주세요.'),
         );
@@ -214,7 +280,7 @@ export function createRunService(deps: Dependencies, policy: GpsPolicy) {
             throw new Error('이미 진행 중인 러닝이 있어요.');
           if ((await deps.runs.findUnfinished()).length)
             throw new Error(
-              '미완료 기록이 있어 새 러닝을 시작할 수 없어요. 복구 기능은 추후 제공됩니다.',
+              '미완료 기록이 있어 새 러닝을 시작할 수 없어요. 먼저 이전 기록을 복구해 주세요.',
             );
           if (
             signal.aborted ||
@@ -244,12 +310,15 @@ export function createRunService(deps: Dependencies, policy: GpsPolicy) {
             deps.store.setState({ current: { ...prepared }, path: [] });
             publish();
             await deps.navigateRunning();
+            deps.background?.committed?.();
             startTimers();
           } catch (error) {
             stopLocation();
             clearTimers();
             try {
+              await deps.background?.stop();
               await deps.runs.deleteById(newId);
+              deps.background?.clear();
             } catch {
               throw new Error(
                 '시작 기록을 정리하지 못했어요. 미완료 기록을 보존하며 새 시작을 차단합니다.',
@@ -276,6 +345,11 @@ export function createRunService(deps: Dependencies, policy: GpsPolicy) {
     checkpoint,
     async setForeground(enabled: boolean) {
       foreground = enabled;
+      if (deps.background) {
+        if (enabled && (session?.status === 'RUNNING' || session?.status === 'PAUSED'))
+          await queue(refreshSession).catch(() => showError('러닝 상태를 복원하지 못했어요.'));
+        return;
+      }
       stopLocation();
       await queue(async () => {
         if (!session || session.status !== 'RUNNING') return;
@@ -283,6 +357,22 @@ export function createRunService(deps: Dependencies, policy: GpsPolicy) {
         session = { ...session, gps: { ...session.gps, anchor: null } };
         if (enabled && !controlBusy) await watch();
       }).catch(() => showError('위치 재연결에 실패했어요. 일시정지 후 재개해 주세요.'));
+    },
+    async attach(runId: string) {
+      if (!deps.background || session || controlBusy) return;
+      controlBusy = true;
+      deps.store.setState({ busy: true });
+      try {
+        await queue(async () => {
+          deps.store.setState({ error: null });
+          id = runId;
+          await refreshSession();
+          startTimers();
+        });
+      } finally {
+        controlBusy = false;
+        deps.store.setState({ busy: false });
+      }
     },
     dispose() {
       stopLocation();

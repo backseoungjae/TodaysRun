@@ -84,6 +84,7 @@ export function createRunPreparation(
           throw new Error('background-setting-off');
         await ensurePermission('foreground', signal);
         await ensurePermission('background', signal);
+        if (deps.prepareNotifications) await abortable(deps.prepareNotifications(signal), signal);
         await checkRequirements(signal);
         update({ status: 'waitingForLocation' });
         let monitoring = false;

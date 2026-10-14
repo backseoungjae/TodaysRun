@@ -6,6 +6,7 @@ import { PROPOSED_GPS_POLICY } from '../domain/gpsPolicy';
 import { confirmLocationPermission, locationAdapter } from '../services/locationAdapter';
 import { createRunPreparation } from '../services/runPreparation';
 import type { PreparationState } from '../services/preparationTypes';
+import { prepareRunNotifications } from '../services/runNotifications';
 import { startPreparedRun } from '../services/runRuntime';
 
 export function useRunPreparation() {
@@ -20,6 +21,7 @@ export function useRunPreparation() {
           now: Date.now,
           isAppActive: () => AppState.currentState === 'active',
           onPrepared: startPreparedRun,
+          prepareNotifications: prepareRunNotifications,
         },
         PROPOSED_GPS_POLICY,
         setState,

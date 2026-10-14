@@ -8,6 +8,15 @@ export default function ({ config }: ConfigContext): ExpoConfig {
     ...config,
     name: config.name ?? 'TodaysRun',
     slug: config.slug ?? 'TodaysRun',
+    android: {
+      ...config.android,
+      permissions: [
+        ...new Set([
+          ...(config.android?.permissions ?? []),
+          'android.permission.POST_NOTIFICATIONS',
+        ]),
+      ],
+    },
     plugins: [
       ...(config.plugins ?? []),
       ['react-native-maps', { androidGoogleMapsApiKey: androidMapsKey }],

@@ -1,3 +1,4 @@
+import { restoreRunSession } from '@/database/runSessionSnapshot';
 import { getElapsedMs } from '@/features/run/domain/runSession';
 import type { RunSession } from '@/features/run/domain/runTypes';
 import type { DatabaseClient } from '../databaseClient';
@@ -36,6 +37,23 @@ export function createRunRepository(db: DatabaseClient) {
           session.revision,
         );
         return requireRun(txn, id);
+      });
+    },
+    async checkpointCurrent(id: string, now: (row: RunRecord) => number | null) {
+      return db.write(async (txn) => {
+        const row = await requireRun(txn, id);
+        if (row.status !== 'running') return;
+        const atMs = now(row);
+        if (atMs === null) return;
+        const duration = getElapsedMs(restoreRunSession(row, null), atMs);
+        if (duration === null || atMs < row.lastSavedAtMs) throw new Error('invalid-checkpoint');
+        await txn.runAsync(
+          'UPDATE runs SET active_duration_ms=?,last_checkpoint_at_ms=?,last_saved_at_ms=? WHERE id=?',
+          duration,
+          atMs,
+          atMs,
+          id,
+        );
       });
     },
     async saveCheckpoint(id: string, session: RunSession, atMs: number): Promise<RunRecord> {
@@ -171,10 +189,19 @@ export function createRunRepository(db: DatabaseClient) {
         ).map(parseRun),
       );
     },
-    async deleteById(id: string, completedOnly = false): Promise<void> {
+    async deleteById(
+      id: string,
+      completedOnly = false,
+      unfinishedRevision?: number,
+    ): Promise<void> {
       await db.write(async (txn) => {
         if (completedOnly && (await requireRun(txn, id)).status !== 'completed')
           throw new Error('완료된 기록만 삭제할 수 있어요.');
+        if (unfinishedRevision !== undefined) {
+          const row = await requireRun(txn, id);
+          if (row.status === 'completed' || row.stateRevision !== unfinishedRevision)
+            throw new Error('stale-recovery');
+        }
         await txn.runAsync('DELETE FROM runs WHERE id=?', id);
       });
     },

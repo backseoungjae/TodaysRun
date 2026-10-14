@@ -46,6 +46,7 @@ beforeEach(() => {
     error: null,
   });
   jest.mocked(getRunService).mockResolvedValue({
+    attach: jest.fn(),
     hasActiveRun: () => false,
     manageRecords: async <T,>(operation: () => Promise<T>) => operation(),
     start: jest.fn(),

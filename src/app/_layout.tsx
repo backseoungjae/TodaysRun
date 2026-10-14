@@ -3,9 +3,12 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { RunRecoveryDialog } from '@/features/run/components/RunRecoveryDialog';
+import { useRunBootstrap } from '@/features/run/hooks/useRunBootstrap';
 import { useUiTheme } from '@/shared/ui/useUiTheme';
 
 export default function RootLayout() {
+  const recovery = useRunBootstrap();
   const { colors, isDark } = useUiTheme();
   const baseTheme = isDark ? DarkTheme : DefaultTheme;
   return (
@@ -29,6 +32,7 @@ export default function RootLayout() {
           <Stack.Screen name="run-result/[runId]" options={{ title: '러닝 결과' }} />
           <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
         </Stack>
+        <RunRecoveryDialog recovery={recovery} />
       </ThemeProvider>
     </GestureHandlerRootView>
   );

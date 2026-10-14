@@ -42,7 +42,7 @@ it('실제 권한과 삭제 가능 상태를 조회해서 표시한다', async (
   expect(screen.getByRole('button', { name: '기기 설정 열기' })).toBeEnabled();
   await waitFor(() => expect(screen.getByRole('button', { name: '전체 기록 삭제' })).toBeEnabled());
   expect(screen.getByRole('switch', { name: '백그라운드 기록 사용' })).toBeEnabled();
-  expect(screen.getByText(/실제 백그라운드 위치 기록 기능은 아직 준비 중/)).toBeOnTheScreen();
+  expect(screen.getByText(/앱 내부 사용 설정을 저장해요/)).toBeOnTheScreen();
 });
 
 it('토글 변경은 저장 후 다시 조회하며 화면 재진입에도 유지한다', async () => {

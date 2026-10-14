@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, useWindowDimensions, Platform } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@/shared/ui/components/AppText';
@@ -72,7 +72,9 @@ export function RunSheet({
           )}
         </View>
         <AppText variant="caption" tone="muted">
-          현재는 앱이 화면에 있을 때만 위치를 수집해요. 백그라운드 기록은 아직 지원하지 않아요.
+          {Platform.OS === 'android'
+            ? '러닝 중에는 화면을 끄거나 다른 앱을 사용해도 위치를 기록해요. 강제 종료 후에는 기록이 계속되지 않아요.'
+            : '현재는 앱이 화면에 있을 때만 위치를 수집해요.'}
         </AppText>
       </BottomSheetScrollView>
     </BottomSheet>

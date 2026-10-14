@@ -25,4 +25,5 @@ export interface PreparationDependencies {
   onPrepared(fix: GpsFix, signal: AbortSignal): void | Promise<void>;
   now(): number;
   isAppActive?(): boolean;
+  prepareNotifications?(signal: AbortSignal): Promise<void>;
 }
