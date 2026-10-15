@@ -1,16 +1,19 @@
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { useRunPreparation } from '@/features/run/hooks/useRunPreparation';
 import { CountdownOverlay } from '@/features/run/components/CountdownOverlay';
+import { RunRecoveryContext } from '@/features/run/hooks/runRecoveryContext';
+import { useRunPreparation } from '@/features/run/hooks/useRunPreparation';
 import { preparationMessage } from '@/features/run/services/preparationMessages';
-import { useStore } from 'zustand';
 import { runStore } from '@/features/run/store/runStore';
-import { router } from 'expo-router';
 import { AppButton } from '@/shared/ui/components/AppButton';
 import { AppText } from '@/shared/ui/components/AppText';
 import { Screen } from '@/shared/ui/components/Screen';
 import { Spacing } from '@/shared/ui/tokens/spacing';
+import { router } from 'expo-router';
+import { useContext } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useStore } from 'zustand';
 
 export default function HomeScreen() {
+  const recovery = useContext(RunRecoveryContext);
   const { state, start, cancel } = useRunPreparation();
   const activeStatus = useStore(runStore, (value) => value.status);
   const runError = useStore(runStore, (value) => value.error);
@@ -34,7 +37,7 @@ export default function HomeScreen() {
           <AppButton
             label="진행 중인 러닝으로"
             disabled={runBusy}
-            onPress={() => router.navigate('/running')}
+            onPress={() => (recovery ? recovery.refresh() : router.navigate('/running'))}
           />
         ) : busy ? (
           <>

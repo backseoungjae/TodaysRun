@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { settingsService } from '@/features/settings/settingsService';
 import { PROPOSED_GPS_POLICY } from '../domain/gpsPolicy';
 import { confirmLocationPermission, locationAdapter } from '../services/locationAdapter';
@@ -42,5 +43,12 @@ export function useRunPreparation() {
       };
     }, [preparation]),
   );
-  return { state, start: preparation.start, cancel: preparation.cancel };
+  const start = async () => {
+    if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
+      setState({ status: 'failed', reason: 'expo-go-unsupported' });
+      return;
+    }
+    await preparation.start();
+  };
+  return { state, start, cancel: preparation.cancel };
 }

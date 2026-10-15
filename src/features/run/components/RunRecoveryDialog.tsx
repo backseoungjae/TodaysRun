@@ -12,6 +12,7 @@ import type { useRunBootstrap } from '../hooks/useRunBootstrap';
 export function RunRecoveryDialog({ recovery }: { recovery: ReturnType<typeof useRunBootstrap> }) {
   const { colors } = useUiTheme();
   const records = recovery.inspection.kind === 'required' ? recovery.inspection.records : [];
+  const active = recovery.inspection.kind === 'owned' ? recovery.inspection.record : null;
   return (
     <Modal
       visible={recovery.visible}
@@ -24,7 +25,13 @@ export function RunRecoveryDialog({ recovery }: { recovery: ReturnType<typeof us
         <View style={[styles.dialog, { backgroundColor: colors.surface }]}>
           <ScrollView contentContainerStyle={styles.content}>
             <AppText variant="heading" accessibilityRole="header">
-              완료되지 않은 러닝 기록
+              {recovery.checking
+                ? '러닝 상태 확인 중'
+                : active
+                  ? '진행 중인 러닝이 있어요'
+                  : records.length
+                    ? '완료되지 않은 러닝 기록'
+                    : '러닝 상태 확인 실패'}
             </AppText>
             {recovery.checking ? (
               <>
@@ -33,6 +40,33 @@ export function RunRecoveryDialog({ recovery }: { recovery: ReturnType<typeof us
               </>
             ) : (
               <>
+                {active && (
+                  <View style={styles.record}>
+                    <AppText>
+                      현재 러닝으로 돌아가거나 기록을 삭제하고 Home으로 이동할 수 있어요.
+                    </AppText>
+                    <AppText>{formatRunDate(active.startedAtMs)}</AppText>
+                    <RunMetrics
+                      durationMs={active.activeDurationMs}
+                      distanceMeters={active.distanceMeters}
+                      pace={calculateAveragePaceSecondsPerKm(
+                        active.activeDurationMs,
+                        active.distanceMeters,
+                      )}
+                    />
+                    <AppButton
+                      label="러닝으로 돌아가기"
+                      disabled={recovery.working}
+                      onPress={() => recovery.continueRun(active.id)}
+                    />
+                    <AppButton
+                      label="기록 삭제 후 Home으로"
+                      variant="danger"
+                      disabled={recovery.working}
+                      onPress={() => recovery.remove(active.id)}
+                    />
+                  </View>
+                )}
                 {!!records.length && (
                   <AppText>
                     이전 러닝이 정상적으로 종료되지 않았습니다.{'\n'}마지막으로 저장된 기록을

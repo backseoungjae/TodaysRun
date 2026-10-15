@@ -53,6 +53,7 @@ beforeEach(() => {
     pause,
     resume,
     finish,
+    discard: jest.fn(),
     checkpoint: jest.fn(),
     setForeground: jest.fn(),
     dispose: jest.fn(),

@@ -7,6 +7,11 @@ import { getRecoveryService } from '../../services/recoveryRuntime';
 import { getRunService } from '../../services/runRuntime';
 import type { RunRecord } from '@/database/databaseTypes';
 import type { RecoveryInspection } from '../../services/runRecovery';
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: { executionEnvironment: 'bare' },
+  ExecutionEnvironment: { StoreClient: 'storeClient' },
+}));
 jest.mock('expo-router', () => ({
   router: { replace: jest.fn(), dismissTo: jest.fn() },
   useRootNavigationState: () => ({ key: 'root' }),
@@ -142,10 +147,14 @@ it('복구 처리 중 연속 선택은 한 번만 실행하고 버튼을 비활�
   inspect.mockResolvedValue({ kind: 'none' });
   await act(async () => resolve({ ...row, status: 'completed' }));
 });
-it('단순 JS 재로딩은 같은 프로세스의 러닝으로 연결하고 복구 모달을 띄우지 않는다', async () => {
+it('같은 프로세스의 러닝은 선택 후에만 다시 연결한다', async () => {
   inspect.mockResolvedValue({ kind: 'owned', record: row });
   attach.mockResolvedValue(undefined);
   await render(<Harness />);
+  const button = await screen.findByRole('button', { name: '러닝으로 돌아가기' });
+  expect(attach).not.toHaveBeenCalled();
+  expect(screen.getByRole('button', { name: '기록 삭제 후 Home으로' })).toBeOnTheScreen();
+  await fireEvent.press(button);
   await waitFor(() => expect(attach).toHaveBeenCalledWith('recovery'));
   expect(router.replace).toHaveBeenCalledWith('/running');
   expect(screen.queryByText('기록 종료 및 저장')).toBeNull();

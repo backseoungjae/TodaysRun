@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { RunMap } from '../components/RunMap';
 import { RunSheet } from '../components/RunSheet';
 import { AppText } from '@/shared/ui/components/AppText';
@@ -9,7 +9,8 @@ import { useRunningActions } from '../hooks/useRunningActions';
 import { AppButton } from '@/shared/ui/components/AppButton';
 import { router } from 'expo-router';
 import { Spacing } from '@/shared/ui/tokens/spacing';
-import { useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
+import { RunRecoveryContext } from '../hooks/runRecoveryContext';
 
 function RunningMap({
   sheetFraction,
@@ -44,14 +45,24 @@ function RunningMetrics({ compact }: { compact: boolean }) {
 }
 
 export default function RunningScreen() {
+  const recovery = useContext(RunRecoveryContext);
   const [sheetIndex, setSheetIndex] = useState(1);
   const [containerHeight, setContainerHeight] = useState(0);
   const { status, busy, error, id, pause, resume, finish, showResult } = useRunningActions();
+  const hasRun = !!id && status !== null;
+  const checking =
+    !!recovery &&
+    (recovery.checking ||
+      recovery.working ||
+      recovery.error !== null ||
+      recovery.inspection.kind !== 'none');
+  useEffect(() => {
+    if (!hasRun && !checking && !busy) router.dismissTo('/');
+  }, [hasRun, checking, busy]);
   if (!id || status === null)
     return (
       <View style={styles.empty}>
-        <AppText>진행 중인 러닝이 없어요. Home에서 시작해 주세요.</AppText>
-        <AppButton label="Home으로" onPress={() => router.dismissTo('/')} />
+        <ActivityIndicator accessibilityLabel="러닝 상태 확인 중" />
       </View>
     );
   return (

@@ -1,5 +1,7 @@
 export function preparationMessage(reason: string): string {
   switch (reason) {
+    case 'expo-go-unsupported':
+      return 'Expo Go에서는 화면만 확인할 수 있어요. 러닝 기록은 Android 개발 빌드에서 사용할 수 있어요.';
     case 'background-setting-off':
       return 'Settings에서 백그라운드 기록 사용을 켜 주세요. 실제 기록 기능은 아직 준비 중이에요.';
     case 'foreground-denied':

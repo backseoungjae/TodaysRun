@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { RunRecoveryDialog } from '@/features/run/components/RunRecoveryDialog';
 import { useRunBootstrap } from '@/features/run/hooks/useRunBootstrap';
+import { RunRecoveryContext } from '@/features/run/hooks/runRecoveryContext';
 import { useUiTheme } from '@/shared/ui/useUiTheme';
 
 export default function RootLayout() {
@@ -27,11 +28,13 @@ export default function RootLayout() {
         }}
       >
         <StatusBar style={isDark ? 'light' : 'dark'} />
-        <Stack>
-          <Stack.Screen name="running" options={{ headerShown: false, gestureEnabled: false }} />
-          <Stack.Screen name="run-result/[runId]" options={{ title: '러닝 결과' }} />
-          <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
-        </Stack>
+        <RunRecoveryContext.Provider value={recovery}>
+          <Stack>
+            <Stack.Screen name="running" options={{ headerShown: false, gestureEnabled: false }} />
+            <Stack.Screen name="run-result/[runId]" options={{ title: '러닝 결과' }} />
+            <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+          </Stack>
+        </RunRecoveryContext.Provider>
         <RunRecoveryDialog recovery={recovery} />
       </ThemeProvider>
     </GestureHandlerRootView>

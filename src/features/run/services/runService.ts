@@ -343,6 +343,49 @@ export function createRunService(deps: Dependencies, policy: GpsPolicy) {
     resume: () => change('RESUME'),
     finish: () => change('FINISH'),
     checkpoint,
+    async discard(runId: string): Promise<void> {
+      if (controlBusy) throw new Error('러닝 상태를 변경하고 있어요. 잠시 후 다시 시도해 주세요.');
+      controlBusy = true;
+      deps.store.setState({ busy: true });
+      stopLocation();
+      clearTimers();
+      try {
+        await queue(async () => {
+          if (
+            id !== runId ||
+            !session ||
+            (session.status !== 'RUNNING' && session.status !== 'PAUSED')
+          )
+            throw new Error('삭제할 진행 중인 러닝을 다시 확인해 주세요.');
+          if (deps.background) {
+            await deps.background.stop();
+            await refreshSession();
+          }
+          if (!session) throw new Error('삭제할 러닝이 없어요.');
+          await deps.runs.deleteById(runId, false, session.revision);
+          id = null;
+          session = null;
+          deps.store.setState({
+            id: null,
+            status: null,
+            durationMs: 0,
+            distanceMeters: 0,
+            pace: null,
+            current: null,
+            path: [],
+            error: null,
+          });
+          deps.background?.clear();
+        });
+      } catch (error) {
+        if (session) startTimers();
+        showError('기록을 삭제하지 못했어요. 기존 기록을 보존하며 다시 시도해 주세요.');
+        throw error;
+      } finally {
+        controlBusy = false;
+        deps.store.setState({ busy: false });
+      }
+    },
     async setForeground(enabled: boolean) {
       foreground = enabled;
       if (deps.background) {
