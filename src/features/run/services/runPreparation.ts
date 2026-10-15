@@ -19,6 +19,7 @@ export function createRunPreparation(
   onState: (state: PreparationState) => void,
   timeoutMs = INITIAL_LOCATION_TIMEOUT_MS,
 ) {
+  const requiresBackgroundPermission = deps.requiresBackgroundPermission ?? true;
   let active: AbortController | null = null;
   let state: PreparationState = { status: 'idle' };
   const update = (next: PreparationState) => {
@@ -29,8 +30,6 @@ export function createRunPreparation(
   async function ensurePermission(kind: PermissionKind, signal: AbortSignal) {
     let permission = await abortable(deps.location.getPermission(kind), signal);
     if (permission.granted) return;
-    if (!(await abortable(deps.confirm(kind, !permission.canAskAgain, signal), signal)))
-      throw new Error('permission-cancelled');
     if (permission.canAskAgain)
       await abortable(deps.location.requestPermission(kind, signal), signal);
     else await abortable(deps.location.openSettings(signal), signal);
@@ -45,8 +44,11 @@ export function createRunPreparation(
     if (!(await abortable(deps.backgroundEnabled(), signal)))
       throw new Error('background-setting-off');
     const foreground = await abortable(deps.location.getPermission('foreground'), signal);
-    const background = await abortable(deps.location.getPermission('background'), signal);
-    if (!foreground.granted || !background.granted) throw new Error('permission-revoked');
+    if (!foreground.granted) throw new Error('permission-revoked');
+    if (requiresBackgroundPermission) {
+      const background = await abortable(deps.location.getPermission('background'), signal);
+      if (!background.granted) throw new Error('permission-revoked');
+    }
     if (!(await abortable(deps.location.servicesEnabled(), signal)))
       throw new Error('services-off');
     if (deps.isAppActive && !deps.isAppActive()) throw new Error('app-inactive');
@@ -80,10 +82,20 @@ export function createRunPreparation(
       };
       signal.addEventListener('abort', cleanup, { once: true });
       try {
-        if (!(await abortable(deps.backgroundEnabled(), signal)))
-          throw new Error('background-setting-off');
+        const backgroundEnabled = await abortable(deps.backgroundEnabled(), signal);
+        const foreground = await abortable(deps.location.getPermission('foreground'), signal);
+        const backgroundGranted =
+          !requiresBackgroundPermission ||
+          (await abortable(deps.location.getPermission('background'), signal)).granted;
+        if (!backgroundEnabled || !foreground.granted || !backgroundGranted) {
+          if (!(await abortable(deps.confirm(signal), signal))) {
+            update({ status: 'idle' });
+            return;
+          }
+        }
         await ensurePermission('foreground', signal);
-        await ensurePermission('background', signal);
+        if (requiresBackgroundPermission) await ensurePermission('background', signal);
+        if (!backgroundEnabled) await abortable(deps.enableBackground(), signal);
         if (deps.prepareNotifications) await abortable(deps.prepareNotifications(signal), signal);
         await checkRequirements(signal);
         update({ status: 'waitingForLocation' });

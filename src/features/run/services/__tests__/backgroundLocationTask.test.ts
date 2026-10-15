@@ -89,12 +89,21 @@ it('저장 재시도 성공 뒤 이전 storage 오류를 지운다', async () =>
   await handleBackgroundLocations([point]);
   expect(lease.failure).toBeNull();
 });
+it('앱 사용 중 위치 권한만 허용되어도 위치 알림 서비스의 좌표를 처리한다', async () => {
+  jest
+    .mocked(Location.getBackgroundPermissionsAsync)
+    .mockResolvedValue({ granted: false } as Location.LocationPermissionResponse);
+  await handleBackgroundLocations([point]);
+  expect(processBatch).toHaveBeenCalledTimes(1);
+  expect(backgroundLocation.stop).not.toHaveBeenCalled();
+  expect(Location.getBackgroundPermissionsAsync).not.toHaveBeenCalled();
+});
 it.each(['permission', 'services'] as const)(
   '%s 중단은 추가 쓰기를 막고 Task를 중단한다',
   async (kind) => {
     if (kind === 'permission')
       jest
-        .mocked(Location.getBackgroundPermissionsAsync)
+        .mocked(Location.getForegroundPermissionsAsync)
         .mockResolvedValue({ granted: false } as Location.LocationPermissionResponse);
     else jest.mocked(Location.hasServicesEnabledAsync).mockResolvedValue(false);
     await handleBackgroundLocations([point]);
@@ -114,7 +123,7 @@ it('새 프로세스로 전달된 Task는 SQLite를 쓰지 않고 등록을 정�
 
 it('취소 후 늦게 실패한 권한 조회가 종료된 위치 수집을 다시 활성화하지 않는다', async () => {
   let resolve: (value: Location.LocationPermissionResponse) => void = () => {};
-  jest.mocked(Location.getBackgroundPermissionsAsync).mockImplementationOnce(
+  jest.mocked(Location.getForegroundPermissionsAsync).mockImplementationOnce(
     () =>
       new Promise((r) => {
         resolve = r;
@@ -136,7 +145,7 @@ it('취소 후 늦게 실패한 권한 조회가 종료된 위치 수집을 다�
 it('이전 구독의 지연 권한 오류가 Resume 후 새 Task를 중단하지 않는다', async () => {
   let resolve: (value: Location.LocationPermissionResponse) => void = () => {};
   lease.collectionRevision = 1;
-  jest.mocked(Location.getBackgroundPermissionsAsync).mockImplementationOnce(
+  jest.mocked(Location.getForegroundPermissionsAsync).mockImplementationOnce(
     () =>
       new Promise((r) => {
         resolve = r;

@@ -20,8 +20,10 @@ export interface LocationAdapter {
 
 export interface PreparationDependencies {
   location: LocationAdapter;
+  requiresBackgroundPermission?: boolean;
   backgroundEnabled(): Promise<boolean>;
-  confirm(kind: PermissionKind, needsSettings: boolean, signal: AbortSignal): Promise<boolean>;
+  enableBackground(): Promise<void>;
+  confirm(signal: AbortSignal): Promise<boolean>;
   onPrepared(fix: GpsFix, signal: AbortSignal): void | Promise<void>;
   now(): number;
   isAppActive?(): boolean;

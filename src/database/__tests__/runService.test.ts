@@ -84,6 +84,7 @@ it('카운트다운 완료 후에만 실제 SQLite 러닝을 만들고 화면에
   const preparation = createRunPreparation(
     {
       backgroundEnabled: async () => true,
+      enableBackground: async () => {},
       confirm: async () => true,
       now: Date.now,
       location: {

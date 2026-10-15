@@ -50,17 +50,21 @@ export function getRunService() {
             makeId: () =>
               `${Date.now().toString(36)}-${++cache.sequence}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`,
             canStart: async () => {
-              const [settings, foreground, background, enabled] = await Promise.all([
+              const [settings, foreground, backgroundAllowed, enabled] = await Promise.all([
                 settingsService.get(),
                 locationAdapter.getPermission('foreground'),
-                locationAdapter.getPermission('background'),
+                Platform.OS === 'android'
+                  ? Promise.resolve(true)
+                  : locationAdapter
+                      .getPermission('background')
+                      .then((permission) => permission.granted),
                 locationAdapter.servicesEnabled(),
               ]);
               return (
                 AppState.currentState === 'active' &&
                 settings.backgroundTrackingEnabled &&
                 foreground.granted &&
-                background.granted &&
+                backgroundAllowed &&
                 enabled
               );
             },
@@ -83,13 +87,12 @@ export function getRunService() {
                       const snapshot = await createRunLocationRepository(db).loadSession(id);
                       let lease = runEnvironment.getSession();
                       if (snapshot.run.status === 'running' && lease?.collecting) {
-                        const [fg, bg, enabled, registered] = await Promise.all([
+                        const [fg, enabled, registered] = await Promise.all([
                           locationAdapter.getPermission('foreground'),
-                          locationAdapter.getPermission('background'),
                           locationAdapter.servicesEnabled(),
                           backgroundLocation.registered(),
                         ]);
-                        if (!fg.granted || !bg.granted || !enabled || !registered) {
+                        if (!fg.granted || !enabled || !registered) {
                           runEnvironment.setSession({ ...lease, failure: 'location' });
                           await backgroundLocation.stop(false);
                           lease = runEnvironment.getSession();

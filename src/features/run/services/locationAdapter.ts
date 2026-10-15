@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 import { Alert, AppState, Linking, Platform } from 'react-native';
-import type { LocationAdapter, PermissionKind } from './preparationTypes';
+import type { LocationAdapter } from './preparationTypes';
 
 // OS 설정을 여는 Promise는 이동 시 끝날 수 있으므로 active 복귀까지 별도로 기다린다.
 export function waitForSettingsReturn(open: () => Promise<unknown>, signal: AbortSignal) {
@@ -65,11 +65,7 @@ export const locationAdapter: LocationAdapter = {
   },
 };
 
-export function confirmLocationPermission(
-  kind: PermissionKind,
-  needsSettings: boolean,
-  signal: AbortSignal,
-): Promise<boolean> {
+export function confirmLocationPermission(signal: AbortSignal): Promise<boolean> {
   return new Promise((resolve) => {
     const finish = (value: boolean) => {
       signal.removeEventListener('abort', cancel);
@@ -79,15 +75,16 @@ export function confirmLocationPermission(
     signal.addEventListener('abort', cancel, { once: true });
     if (signal.aborted) return cancel();
     const message =
-      kind === 'foreground'
-        ? '현재 위치를 준비하려면 위치 권한이 필요해요.'
-        : '화면을 끄거나 다른 앱을 볼 때도 러닝을 기록하려면 백그라운드 위치 권한이 필요해요. Android 11 이상에서는 설정의 위치 권한에서 “항상 허용”을 선택한 뒤 돌아와 주세요.';
+      (Platform.OS === 'android'
+        ? '러닝을 시작하려면 위치 권한이 필요해요. “앱 사용 중에만 허용”으로 시작할 수 있어요. 러닝 중에는 위치 기록 알림과 함께 화면 잠금·앱 전환 중에도 기록해요.'
+        : '러닝을 시작하려면 위치 권한과 백그라운드 위치 권한이 필요해요.') +
+      '\n확인을 누르면 필요한 권한을 요청하고, 허용이 완료되면 백그라운드 기록 사용을 켜요. 권한을 다시 요청할 수 없으면 기기 설정에서 허용한 뒤 돌아와 주세요.';
     Alert.alert(
       '위치 권한 안내',
-      needsSettings ? `${message}\n기기 설정에서 권한을 변경해 주세요.` : message,
+      message,
       [
         { text: '취소', style: 'cancel', onPress: cancel },
-        { text: needsSettings ? '설정 열기' : '확인', onPress: () => finish(!signal.aborted) },
+        { text: '확인', onPress: () => finish(!signal.aborted) },
       ],
       { cancelable: true, onDismiss: cancel },
     );

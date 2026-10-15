@@ -5,6 +5,8 @@ import type { RunRecord } from '@/database/databaseTypes';
 import { Screen } from '@/shared/ui/components/Screen';
 import { AppText } from '@/shared/ui/components/AppText';
 import { AppButton } from '@/shared/ui/components/AppButton';
+import { IconButton } from '@/shared/ui/components/IconButton';
+import { useUiTheme } from '@/shared/ui/useUiTheme';
 import { RunMetrics } from '../components/RunMetrics';
 import { RunMap, type PathPoint } from '../components/RunMap';
 import { calculateAveragePaceSecondsPerKm } from '../domain/runMetrics';
@@ -12,6 +14,7 @@ import { getCompletedRun, getRunPath } from '../services/runResultService';
 import { formatRunDate } from '../services/runDisplay';
 
 export default function RunResultScreen() {
+  const { colors } = useUiTheme();
   const { runId, source } = useLocalSearchParams<{ runId: string; source?: string }>();
   const id = typeof runId === 'string' ? runId : '';
   const fromActivity = source === 'activity';
@@ -68,7 +71,11 @@ export default function RunResultScreen() {
         options={{
           title: '러닝 결과',
           gestureEnabled: false,
-          headerLeft: () => <AppButton label="뒤로" variant="secondary" onPress={back} />,
+          headerLeft: () => (
+            <IconButton accessibilityLabel="뒤로" onPress={back}>
+              <View accessible={false} style={[styles.backIcon, { borderColor: colors.text }]} />
+            </IconButton>
+          ),
         }}
       />
       <AppText variant="title">러닝 결과</AppText>
@@ -118,5 +125,12 @@ export default function RunResultScreen() {
   );
 }
 const styles = StyleSheet.create({
+  backIcon: {
+    width: 12,
+    height: 12,
+    borderLeftWidth: 2,
+    borderBottomWidth: 2,
+    transform: [{ rotate: '45deg' }],
+  },
   map: { height: 320, position: 'relative', overflow: 'hidden' },
 });

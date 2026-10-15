@@ -32,13 +32,11 @@ export async function handleBackgroundLocations(
   }
   if (!locations) return;
   try {
-    const [foreground, background, enabled] = await Promise.all([
+    const [foreground, enabled] = await Promise.all([
       Location.getForegroundPermissionsAsync(),
-      Location.getBackgroundPermissionsAsync(),
       Location.hasServicesEnabledAsync(),
     ]);
-    if (!foreground.granted || !background.granted || !enabled)
-      throw new Error('location-unavailable');
+    if (!foreground.granted || !enabled) throw new Error('location-unavailable');
   } catch {
     const latest = sameCollection();
     if (latest) {

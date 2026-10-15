@@ -53,6 +53,12 @@ export default function SettingsScreen() {
         <AppText variant="caption" tone="muted">
           권한은 기기 설정에서 변경해 주세요. 앱에 돌아오면 다시 확인해요.
         </AppText>
+        {Platform.OS === 'android' && (
+          <AppText variant="caption" tone="muted">
+            “앱 사용 중에만 허용”으로 러닝을 시작할 수 있어요. 백그라운드 위치 권한은 필수가 아니며,
+            러닝 중 위치 기록 알림으로 화면 잠금·앱 전환 중에도 기록해요.
+          </AppText>
+        )}
       </SettingSection>
       <SettingSection title="백그라운드 기록">
         <View style={styles.row}>

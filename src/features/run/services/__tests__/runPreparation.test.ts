@@ -38,7 +38,9 @@ function fixture() {
   const states: PreparationState[] = [];
   const deps = {
     location,
+    requiresBackgroundPermission: true,
     backgroundEnabled: jest.fn().mockResolvedValue(true),
+    enableBackground: jest.fn().mockResolvedValue(undefined),
     confirm: jest.fn().mockResolvedValue(true),
     now: Date.now,
     onPrepared: jest.fn(),
@@ -98,6 +100,25 @@ it.each(['foreground', 'background'] as const)(
     expect(f.location.watch).not.toHaveBeenCalled();
   },
 );
+it('Android 정책에서는 앱 사용 중 위치 권한만으로 준비하며 백그라운드 권한을 요청하지 않는다', async () => {
+  const f = fixture();
+  f.deps.requiresBackgroundPermission = false;
+  f.location.getPermission.mockImplementation(async (kind) => ({
+    granted: kind === 'foreground',
+    canAskAgain: true,
+  }));
+  const pending = f.service.start();
+  await flush();
+  expect(f.service.getState()).toEqual({ status: 'waitingForLocation' });
+  expect(f.location.getPermission.mock.calls.every(([kind]) => kind === 'foreground')).toBe(true);
+  expect(f.location.requestPermission).not.toHaveBeenCalled();
+  expect(f.deps.confirm).not.toHaveBeenCalled();
+  f.receive();
+  await flush();
+  await jest.advanceTimersByTimeAsync(3_000);
+  await pending;
+  expect(f.deps.onPrepared).toHaveBeenCalledTimes(1);
+});
 it('다시 요청 불가 권한은 설명 후 설정 이동 및 실제 OS 권한 재조회를 수행한다', async () => {
   const f = fixture();
   let granted = false;
@@ -107,7 +128,7 @@ it('다시 요청 불가 권한은 설명 후 설정 이동 및 실제 OS 권한
   });
   const pending = f.service.start();
   await flush();
-  expect(f.deps.confirm).toHaveBeenCalledWith('foreground', true, expect.any(AbortSignal));
+  expect(f.deps.confirm).toHaveBeenCalledWith(expect.any(AbortSignal));
   expect(f.location.openSettings).toHaveBeenCalledTimes(1);
   expect(
     f.location.getPermission.mock.calls.filter(([kind]) => kind === 'foreground').length,
@@ -122,21 +143,29 @@ it('설정에서 허용하지 않고 돌아온 경우 blocked 상태를 표시�
   await f.service.start();
   expect(f.service.getState()).toEqual({ status: 'failed', reason: 'foreground-blocked' });
 });
-it('앱 내부 설정 OFF이면 OS 권한 요청도 위치 요청도 하지 않는다', async () => {
+it('앱 내부 설정 OFF이면 안내 확인 후 설정을 켜고 위치를 준비한다', async () => {
   const f = fixture();
   f.deps.backgroundEnabled.mockResolvedValue(false);
-  await f.service.start();
-  expect(f.service.getState()).toEqual({ status: 'failed', reason: 'background-setting-off' });
-  expect(f.location.getPermission).not.toHaveBeenCalled();
-  expect(f.location.watch).not.toHaveBeenCalled();
+  f.deps.enableBackground.mockImplementation(async () => {
+    f.deps.backgroundEnabled.mockResolvedValue(true);
+  });
+  const pending = f.service.start();
+  await flush();
+  expect(f.deps.confirm).toHaveBeenCalledTimes(1);
+  expect(f.deps.enableBackground).toHaveBeenCalledTimes(1);
+  expect(f.service.getState()).toEqual({ status: 'waitingForLocation' });
+  f.service.cancel();
+  await pending;
 });
 it('권한 안내 취소는 권한을 요청하지 않는다', async () => {
   const f = fixture();
   f.location.getPermission.mockResolvedValue({ granted: false, canAskAgain: true });
   f.deps.confirm.mockResolvedValue(false);
   await f.service.start();
-  expect(f.service.getState()).toEqual({ status: 'failed', reason: 'permission-cancelled' });
+  expect(f.service.getState()).toEqual({ status: 'idle' });
   expect(f.location.requestPermission).not.toHaveBeenCalled();
+  expect(f.deps.enableBackground).not.toHaveBeenCalled();
+  expect(f.location.watch).not.toHaveBeenCalled();
 });
 it.each([
   { accuracyMeters: 31 },

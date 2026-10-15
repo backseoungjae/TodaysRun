@@ -33,6 +33,7 @@ it.each(['cancel', 'complete'] as const)(
             },
           },
           backgroundEnabled: async () => (await settings.get()).backgroundTrackingEnabled,
+          enableBackground: () => settings.setBackgroundTrackingEnabled(true),
           confirm: async () => true,
           now: Date.now,
           onPrepared: completed,

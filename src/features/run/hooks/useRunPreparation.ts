@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { settingsService } from '@/features/settings/settingsService';
@@ -17,7 +17,10 @@ export function useRunPreparation() {
       createRunPreparation(
         {
           location: locationAdapter,
+          // Android는 사용자가 시작한 위치 알림 서비스로 앱 전환 중에도 기록한다.
+          requiresBackgroundPermission: Platform.OS !== 'android',
           backgroundEnabled: async () => (await settingsService.get()).backgroundTrackingEnabled,
+          enableBackground: () => settingsService.setBackgroundTrackingEnabled(true),
           confirm: confirmLocationPermission,
           now: Date.now,
           isAppActive: () => AppState.currentState === 'active',
