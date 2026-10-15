@@ -1,0 +1,12 @@
+appId: com.todaysrun.app
+---
+- runFlow: start.yaml
+- runFlow: finish.yaml
+- assertVisible:
+    id: run-distance
+    text: '0.00'
+- assertVisible:
+    id: run-pace
+    text: '--''--"'
+- back
+- assertVisible: START

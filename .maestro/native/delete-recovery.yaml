@@ -1,0 +1,22 @@
+appId: com.todaysrun.app
+---
+- extendedWaitUntil:
+    visible: 완료되지 않은 러닝 기록
+    timeout: 30000
+- tapOn: 기록 삭제
+- assertVisible: 미완료 기록을 삭제하시겠습니까?
+- tapOn: 취소
+- assertVisible: 기록 종료 및 저장
+- tapOn: 기록 삭제
+- tapOn:
+    id: android:id/button1
+- extendedWaitUntil:
+    visible: START
+    timeout: 15000
+- runFlow: ../helpers/activity.yaml
+- assertVisible:
+    id: activity-record-.*
+    index: 0
+- assertNotVisible:
+    id: activity-record-.*
+    index: 1

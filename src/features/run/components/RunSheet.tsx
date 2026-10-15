@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions, Platform } from 'react-native';
+import { useAnimatedReaction, useSharedValue } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@/shared/ui/components/AppText';
@@ -27,6 +29,23 @@ export function RunSheet({
   containerHeight?: number;
 }) {
   const [index, setIndex] = useState(1);
+  const animatedIndex = useSharedValue(1);
+  const synchronizeSnap = useCallback(
+    (next: number) => {
+      if (next !== 0 && next !== 1) return;
+      setIndex(next);
+      onSnap?.(next);
+    },
+    [onSnap],
+  );
+  // 끝점까지 직접 드래그하면 애니메이션 콜백 없이 끝날 수 있으므로 실제 위치도 관찰한다.
+  useAnimatedReaction(
+    () => animatedIndex.get(),
+    (next, previous) => {
+      if (next !== previous && (next === 0 || next === 1)) scheduleOnRN(synchronizeSnap, next);
+    },
+    [synchronizeSnap],
+  );
   const insets = useSafeAreaInsets();
   const { height: windowHeight, fontScale } = useWindowDimensions();
   const snapPoints = useMemo(() => {
@@ -39,10 +58,8 @@ export function RunSheet({
   return (
     <BottomSheet
       index={index}
-      onChange={(next) => {
-        setIndex(next);
-        onSnap?.(next);
-      }}
+      onChange={synchronizeSnap}
+      animatedIndex={animatedIndex}
       snapPoints={snapPoints}
       enableDynamicSizing={false}
       enablePanDownToClose={false}

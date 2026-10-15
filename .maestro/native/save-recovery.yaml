@@ -1,0 +1,21 @@
+appId: com.todaysrun.app
+---
+- extendedWaitUntil:
+    visible: 완료되지 않은 러닝 기록
+    timeout: 30000
+- assertNotVisible: START
+- copyTextFrom:
+    id: run-duration
+- evalScript: ${output.recoveryDuration = maestro.copiedText}
+- tapOn: 기록 종료 및 저장
+- extendedWaitUntil:
+    visible: 저장 완료
+    timeout: 15000
+- assertVisible:
+    id: run-duration
+    text: ${output.recoveryDuration}
+- back
+- runFlow: ../helpers/activity.yaml
+- assertVisible:
+    id: activity-record-.*
+    index: 1

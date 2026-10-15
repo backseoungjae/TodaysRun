@@ -1,0 +1,4 @@
+appId: com.todaysrun.app
+---
+- tapOn: 재개
+- assertVisible: 러닝 중

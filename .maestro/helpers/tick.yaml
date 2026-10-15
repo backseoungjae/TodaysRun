@@ -1,0 +1,10 @@
+appId: com.todaysrun.app
+---
+- copyTextFrom:
+    id: run-duration
+- evalScript: ${output.tickDuration = maestro.copiedText}
+- extendedWaitUntil:
+    notVisible:
+      id: run-duration
+      text: ${output.tickDuration}
+    timeout: 5000

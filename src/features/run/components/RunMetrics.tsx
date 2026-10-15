@@ -17,13 +17,13 @@ export function RunMetrics({
   if (compact)
     return (
       <View style={styles.row}>
-        <AppText variant="button" numberOfLines={1} style={styles.metric}>
+        <AppText testID="run-duration" variant="button" numberOfLines={1} style={styles.metric}>
           시간 {formatDuration(durationMs)}
         </AppText>
-        <AppText variant="button" numberOfLines={1} style={styles.metric}>
+        <AppText testID="run-distance" variant="button" numberOfLines={1} style={styles.metric}>
           거리 {formatDistance(distanceMeters)}km
         </AppText>
-        <AppText variant="button" numberOfLines={1} style={styles.metric}>
+        <AppText testID="run-pace" variant="button" numberOfLines={1} style={styles.metric}>
           페이스 {formatPace(pace)}/km
         </AppText>
       </View>
@@ -32,15 +32,21 @@ export function RunMetrics({
     <View style={styles.row}>
       <View style={styles.metric}>
         <AppText tone="muted">시간</AppText>
-        <AppText variant="heading">{formatDuration(durationMs)}</AppText>
+        <AppText testID="run-duration" variant="heading">
+          {formatDuration(durationMs)}
+        </AppText>
       </View>
       <View style={styles.metric}>
         <AppText tone="muted">거리 · km</AppText>
-        <AppText variant="heading">{formatDistance(distanceMeters)}</AppText>
+        <AppText testID="run-distance" variant="heading">
+          {formatDistance(distanceMeters)}
+        </AppText>
       </View>
       <View style={styles.metric}>
         <AppText tone="muted">페이스 · /km</AppText>
-        <AppText variant="heading">{formatPace(pace)}</AppText>
+        <AppText testID="run-pace" variant="heading">
+          {formatPace(pace)}
+        </AppText>
       </View>
     </View>
   );

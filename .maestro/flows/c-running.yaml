@@ -1,0 +1,95 @@
+appId: com.todaysrun.app
+name: C - GPS 이동과 러닝 제어
+---
+- runFlow: ../helpers/setup.yaml
+- runFlow: ../helpers/start.yaml
+- back
+- assertVisible: 러닝 기록 중
+- tapOn:
+    id: android:id/button1
+- assertVisible: 러닝 중
+- copyTextFrom:
+    id: run-duration
+- evalScript: ${output.initialDuration = maestro.copiedText}
+- runFlow: ../helpers/tick.yaml
+- runFlow: ../helpers/tick.yaml
+- setLocation:
+    latitude: 10.1
+    longitude: 10.1001
+- extendedWaitUntil:
+    visible:
+      id: run-distance
+      text: '0.01'
+    timeout: 15000
+- assertNotVisible:
+    id: run-duration
+    text: ${output.initialDuration}
+- swipe:
+    from:
+      text: Bottom sheet handle
+    direction: DOWN
+    duration: 500
+- assertVisible:
+    id: run-distance
+    text: 거리 0.01km
+- assertVisible: 일시정지
+- swipe:
+    from:
+      text: 러닝 지도
+      point: 50%, 15%
+    direction: LEFT
+- swipe:
+    from:
+      text: Bottom sheet handle
+    direction: UP
+    duration: 500
+- assertVisible: 러닝 중
+- assertVisible:
+    id: run-distance
+    text: '0.01'
+- tapOn: 일시정지
+- assertVisible: 재개
+- copyTextFrom:
+    id: run-duration
+- evalScript: ${output.pausedDuration = maestro.copiedText}
+- setLocation:
+    latitude: 10.1
+    longitude: 10.101
+- assertVisible:
+    id: run-duration
+    text: ${output.pausedDuration}
+- assertVisible:
+    id: run-distance
+    text: '0.01'
+- tapOn: 재개
+- assertVisible: 러닝 중
+- setLocation:
+    latitude: 10.1
+    longitude: 10.101
+- runFlow: ../helpers/tick.yaml
+- runFlow: ../helpers/tick.yaml
+- setLocation:
+    latitude: 10.1
+    longitude: 10.1011
+- extendedWaitUntil:
+    visible:
+      id: run-distance
+      text: '0.02'
+    timeout: 15000
+- tapOn: 일시정지
+- tapOn: 종료
+- assertVisible: 러닝을 종료하시겠습니까?
+- tapOn: 취소
+- assertVisible: 재개
+- assertNotVisible: 저장 완료
+- tapOn: 종료
+- tapOn:
+    id: android:id/button1
+    text: 종료
+- extendedWaitUntil:
+    visible: 저장 완료
+    timeout: 15000
+- assertVisible:
+    id: run-distance
+    text: '0.02'
+- assertVisible: 러닝 지도

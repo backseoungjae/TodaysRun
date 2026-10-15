@@ -1,0 +1,15 @@
+appId: com.todaysrun.app
+name: D - 완료 기록과 상세 뒤로가기
+---
+- runFlow: ../helpers/setup.yaml
+- runFlow: ../helpers/complete-zero.yaml
+- runFlow: ../helpers/activity.yaml
+- tapOn:
+    id: activity-record-.*
+- assertVisible: 러닝 결과
+- assertNotVisible: 저장 완료
+- assertVisible: 러닝 지도
+- back
+- assertVisible: 러닝 기록
+- assertVisible:
+    id: activity-record-.*

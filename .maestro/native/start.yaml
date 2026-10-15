@@ -1,0 +1,6 @@
+appId: com.todaysrun.app
+---
+- runFlow: ../helpers/setup.yaml
+- runFlow: ../helpers/start.yaml
+- runFlow: ../helpers/tick.yaml
+- runFlow: ../helpers/tick.yaml

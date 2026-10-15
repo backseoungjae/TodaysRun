@@ -1,0 +1,23 @@
+appId: com.todaysrun.app
+---
+- assertTrue: ${E2E_ISOLATED === 'true'}
+- launchApp:
+    stopApp: false
+    permissions:
+      all: allow
+- extendedWaitUntil:
+    visible: START
+    timeout: 30000
+- runFlow: settings.yaml
+- assertVisible: '포그라운드 위치: 허용'
+- assertVisible: '백그라운드 위치: 허용'
+- tapOn:
+    text: 백그라운드 기록 사용
+    checked: false
+- assertVisible:
+    text: 백그라운드 기록 사용
+    checked: true
+- runFlow: home.yaml
+- setLocation:
+    latitude: 10.1
+    longitude: 10.1

@@ -1,0 +1,18 @@
+appId: com.todaysrun.app
+---
+- setLocation:
+    latitude: 10.1
+    longitude: 10.1
+- tapOn:
+    text: START
+    repeat: 2
+    delay: 40
+    waitToSettleTimeoutMs: 1
+- extendedWaitUntil:
+    visible: 러닝 중
+    timeout: 15000
+- assertVisible: 일시정지
+- assertNotVisible: START
+- setLocation:
+    latitude: 10.1
+    longitude: 10.1

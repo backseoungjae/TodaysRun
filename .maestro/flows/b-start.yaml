@@ -1,0 +1,53 @@
+appId: com.todaysrun.app
+name: B - GPS 준비와 카운트다운
+---
+- runFlow: ../helpers/setup.yaml
+- setLocation:
+    latitude: 10.1
+    longitude: 10.1
+- tapOn:
+    text: START
+    waitToSettleTimeoutMs: 0
+- extendedWaitUntil:
+    visible:
+      id: countdown-value
+      text: '3'
+    timeout: 15000
+- extendedWaitUntil:
+    visible:
+      id: countdown-value
+      text: '2'
+    timeout: 3000
+- extendedWaitUntil:
+    visible:
+      id: countdown-value
+      text: '1'
+    timeout: 3000
+- extendedWaitUntil:
+    visible: 러닝 중
+    timeout: 15000
+- assertVisible: 일시정지
+- assertNotVisible: START
+- setLocation:
+    latitude: 10.1
+    longitude: 10.1
+- runFlow: ../helpers/finish.yaml
+- back
+- runFlow: ../helpers/activity.yaml
+- assertVisible:
+    id: activity-record-.*
+    index: 0
+- assertNotVisible:
+    id: activity-record-.*
+    index: 1
+- runFlow: ../helpers/home.yaml
+- runFlow: ../helpers/start.yaml
+- runFlow: ../helpers/finish.yaml
+- back
+- runFlow: ../helpers/activity.yaml
+- assertVisible:
+    id: activity-record-.*
+    index: 1
+- assertNotVisible:
+    id: activity-record-.*
+    index: 2

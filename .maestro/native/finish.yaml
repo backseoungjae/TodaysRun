@@ -1,0 +1,9 @@
+appId: com.todaysrun.app
+---
+- tapOn: 종료
+- assertVisible: 러닝을 종료하시겠습니까?
+- tapOn:
+    id: android:id/button1
+- extendedWaitUntil:
+    visible: 저장 완료
+    timeout: 15000

@@ -1,0 +1,5 @@
+appId: com.todaysrun.app
+---
+- tapOn: 메뉴 열기
+- tapOn: Activity
+- assertVisible: 러닝 기록

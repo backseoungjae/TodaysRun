@@ -1,0 +1,21 @@
+appId: com.todaysrun.app
+name: F - 0km 기록 보관
+---
+- runFlow: ../helpers/setup.yaml
+- runFlow: ../helpers/complete-zero.yaml
+- runFlow: ../helpers/activity.yaml
+- assertVisible:
+    id: activity-record-.*
+- tapOn:
+    id: activity-record-.*
+- assertVisible:
+    id: run-distance
+    text: '0.00'
+- assertVisible:
+    id: run-pace
+    text: '--''--"'
+- assertNotVisible: 저장 완료
+- back
+- tapOn: .* 러닝 기록 삭제
+- tapOn: 삭제
+- assertVisible: 아직 러닝 기록이 없어요

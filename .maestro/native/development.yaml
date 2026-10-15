@@ -1,0 +1,18 @@
+appId: com.todaysrun.app
+---
+- extendedWaitUntil:
+    visible: START|Continue|Close
+    timeout: 60000
+- runFlow:
+    when:
+      visible: Continue
+    commands:
+      - tapOn: Continue
+- runFlow:
+    when:
+      visible: Close
+    commands:
+      - tapOn: Close
+- extendedWaitUntil:
+    visible: START
+    timeout: 60000

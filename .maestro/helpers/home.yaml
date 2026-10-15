@@ -1,0 +1,5 @@
+appId: com.todaysrun.app
+---
+- tapOn: 메뉴 열기
+- tapOn: Home
+- assertVisible: START

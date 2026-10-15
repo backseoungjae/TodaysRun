@@ -1,0 +1,9 @@
+appId: com.todaysrun.app
+---
+- launchApp:
+    stopApp: false
+- extendedWaitUntil:
+    visible: 러닝 중
+    timeout: 15000
+- assertVisible: 일시정지
+- assertNotVisible: 완료되지 않은 러닝 기록

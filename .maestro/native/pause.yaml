@@ -1,0 +1,4 @@
+appId: com.todaysrun.app
+---
+- tapOn: 일시정지
+- assertVisible: 재개

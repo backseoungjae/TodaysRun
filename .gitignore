@@ -44,3 +44,7 @@ example
 
 # Local Expo module build output
 /modules/run-environment/android/build/
+
+# Local Maestro reports and screenshots
+/.maestro/results/
+/.maestro/__pycache__/

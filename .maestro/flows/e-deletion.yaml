@@ -1,0 +1,46 @@
+appId: com.todaysrun.app
+name: E - 개별 삭제와 전체 삭제
+---
+- runFlow: ../helpers/setup.yaml
+- runFlow: ../helpers/complete-zero.yaml
+- runFlow: ../helpers/activity.yaml
+- tapOn: .* 러닝 기록 삭제
+- assertVisible: 이 기록을 삭제하시겠습니까?
+- tapOn: 취소
+- assertVisible:
+    id: activity-record-.*
+- tapOn: .* 러닝 기록 삭제
+- tapOn: 삭제
+- assertVisible: 아직 러닝 기록이 없어요
+- runFlow: ../helpers/home.yaml
+- runFlow: ../helpers/complete-zero.yaml
+- runFlow: ../helpers/complete-zero.yaml
+- runFlow: ../helpers/settings.yaml
+- scrollUntilVisible:
+    element:
+      text: 전체 기록 삭제
+    direction: DOWN
+- tapOn: 전체 기록 삭제
+- assertVisible: 전체 기록을 삭제하시겠습니까?
+- tapOn: 취소
+- runFlow: ../helpers/activity.yaml
+- assertVisible:
+    id: activity-record-.*
+    index: 1
+- runFlow: ../helpers/settings.yaml
+- scrollUntilVisible:
+    element:
+      text: 전체 기록 삭제
+    direction: DOWN
+- tapOn: 전체 기록 삭제
+- tapOn: 전체 삭제
+- assertVisible: 모든 러닝 기록과 경로를 삭제했어요. 앱 설정은 유지돼요.
+- scrollUntilVisible:
+    element:
+      text: 백그라운드 기록 사용
+    direction: UP
+- assertVisible:
+    text: 백그라운드 기록 사용
+    checked: true
+- runFlow: ../helpers/activity.yaml
+- assertVisible: 아직 러닝 기록이 없어요

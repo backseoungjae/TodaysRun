@@ -39,6 +39,7 @@ export default function ActivityScreen() {
           style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
         >
           <Pressable
+            testID={`activity-record-${record.id}`}
             accessibilityRole="button"
             accessibilityLabel={`${formatRunDate(record.startedAtMs)} 러닝 기록 보기`}
             disabled={deleting !== null}
