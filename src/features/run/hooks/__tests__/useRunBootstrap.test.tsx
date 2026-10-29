@@ -1,5 +1,6 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react-native';
 import { Alert, Platform } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { router } from 'expo-router';
 import { useRunBootstrap } from '../useRunBootstrap';
 import { RunRecoveryDialog } from '../../components/RunRecoveryDialog';
@@ -61,6 +62,26 @@ it('선택 전 복구 모달이 표시되고 기록을 임의로 저장·삭제�
   expect(screen.getByText(/이전 러닝이 정상적으로 종료되지 않았습니다/)).toBeOnTheScreen();
   expect(save).not.toHaveBeenCalled();
   expect(remove).not.toHaveBeenCalled();
+});
+it('Expo Go에서는 복구 검사 없이 대기 상태로 시작하고 복구 작업을 실행하지 않는다', async () => {
+  jest.replaceProperty(Constants, 'executionEnvironment', ExecutionEnvironment.StoreClient);
+  const { result } = await renderHook(() => useRunBootstrap());
+  expect(result.current).toMatchObject({
+    checking: false,
+    inspection: { kind: 'none' },
+    error: null,
+    working: false,
+    visible: false,
+  });
+  await act(async () => {
+    result.current.refresh();
+    result.current.save('recovery');
+    result.current.remove('recovery');
+    result.current.continueRun('recovery');
+  });
+  expect(getRecoveryService).not.toHaveBeenCalled();
+  expect(getRunService).not.toHaveBeenCalled();
+  expect(router.replace).not.toHaveBeenCalled();
 });
 it('저장 성공 후에만 실제 runId 결과 화면으로 이동한다', async () => {
   await render(<Harness />);

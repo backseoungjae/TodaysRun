@@ -16,7 +16,7 @@ const fix = (extra: Partial<GpsFix> = {}): GpsFix => ({
   timestampMs: Date.now(),
   ...extra,
 });
-function fixture() {
+function fixture(requiresBackgroundPermission = true) {
   let receive: (value: GpsFix) => void = () => {};
   let fail: () => void = () => {};
   const remove = jest.fn();
@@ -38,7 +38,7 @@ function fixture() {
   const states: PreparationState[] = [];
   const deps = {
     location,
-    requiresBackgroundPermission: true,
+    requiresBackgroundPermission,
     backgroundEnabled: jest.fn().mockResolvedValue(true),
     enableBackground: jest.fn().mockResolvedValue(undefined),
     confirm: jest.fn().mockResolvedValue(true),
@@ -101,8 +101,7 @@ it.each(['foreground', 'background'] as const)(
   },
 );
 it('Android 정책에서는 앱 사용 중 위치 권한만으로 준비하며 백그라운드 권한을 요청하지 않는다', async () => {
-  const f = fixture();
-  f.deps.requiresBackgroundPermission = false;
+  const f = fixture(false);
   f.location.getPermission.mockImplementation(async (kind) => ({
     granted: kind === 'foreground',
     canAskAgain: true,
@@ -233,18 +232,21 @@ it('카운트다운 취소는 완료 콜백을 호출하지 않고 타이머와 
   expect(f.remove).toHaveBeenCalledTimes(1);
   expect(jest.getTimerCount()).toBe(0);
 });
-it('카운트다운 중 권한 철회를 재조회로 감지한다', async () => {
-  const f = fixture();
-  const pending = f.service.start();
-  await flush();
-  f.receive();
-  await flush();
-  f.location.getPermission.mockResolvedValue({ granted: false, canAskAgain: true });
-  await jest.advanceTimersByTimeAsync(1_000);
-  await pending;
-  expect(f.service.getState()).toEqual({ status: 'failed', reason: 'permission-revoked' });
-  expect(f.deps.onPrepared).not.toHaveBeenCalled();
-});
+it.each([true, false])(
+  '백그라운드 권한 필요=%s: 카운트다운 중 권한 철회를 재조회로 감지한다',
+  async (requiresBackgroundPermission) => {
+    const f = fixture(requiresBackgroundPermission);
+    const pending = f.service.start();
+    await flush();
+    f.receive();
+    await flush();
+    f.location.getPermission.mockResolvedValue({ granted: false, canAskAgain: true });
+    await jest.advanceTimersByTimeAsync(1_000);
+    await pending;
+    expect(f.service.getState()).toEqual({ status: 'failed', reason: 'permission-revoked' });
+    expect(f.deps.onPrepared).not.toHaveBeenCalled();
+  },
+);
 it('카운트다운 중 마지막 위치가 오래되면 안전하게 중단한다', async () => {
   const f = fixture();
   const pending = f.service.start();

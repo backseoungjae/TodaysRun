@@ -1,10 +1,13 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
 import { router } from 'expo-router';
-import { AppState, Button, Text, type AppStateStatus } from 'react-native';
+import { AppState, Button, Platform, Text, type AppStateStatus } from 'react-native';
 import { locationAdapter } from '../../services/locationAdapter';
 import { useRunPreparation } from '../useRunPreparation';
 
+jest.mock('../../services/runNotifications', () => ({
+  prepareRunNotifications: jest.fn().mockResolvedValue(undefined),
+}));
 jest.mock('@/features/settings/settingsService', () => ({
   settingsService: {
     get: jest.fn().mockResolvedValue({ backgroundTrackingEnabled: true }),
@@ -35,6 +38,9 @@ const remove = jest.fn();
 let listeners = new Set<(state: AppStateStatus) => void>();
 beforeEach(() => {
   jest.clearAllMocks();
+  jest
+    .mocked(locationAdapter.getPermission)
+    .mockResolvedValue({ granted: true, canAskAgain: true });
   AppState.currentState = 'active';
   listeners = new Set();
   jest.spyOn(AppState, 'addEventListener').mockImplementation((_event, callback) => {
@@ -61,6 +67,17 @@ it('Home 이탈 시 위치 구독을 제거한다', async () => {
   await fireEvent.press(screen.getByText('화면 이동'));
   await screen.findByText('다른 화면');
   expect(remove).toHaveBeenCalledTimes(1);
+});
+it('Android에서는 백그라운드 위치 권한이 없어도 포그라운드 권한으로 GPS를 준비한다', async () => {
+  jest.replaceProperty(Platform, 'OS', 'android');
+  jest.mocked(locationAdapter.getPermission).mockImplementation(async (kind) => ({
+    granted: kind === 'foreground',
+    canAskAgain: true,
+  }));
+  await startWaiting();
+  expect(
+    jest.mocked(locationAdapter.getPermission).mock.calls.every(([kind]) => kind === 'foreground'),
+  ).toBe(true);
 });
 it('앱이 백그라운드로 전환되면 GPS 준비를 취소한다', async () => {
   await startWaiting();

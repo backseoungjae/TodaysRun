@@ -44,10 +44,7 @@ export function useRunBootstrap() {
     generation.current++;
   }, []);
   useEffect(() => {
-    if (!shouldInspect) {
-      setState({ checking: false, inspection: { kind: 'none' }, error: null });
-      return;
-    }
+    if (!shouldInspect) return;
     if (!navigation?.key) return;
     live.current = true;
     void Promise.resolve().then(() => {
